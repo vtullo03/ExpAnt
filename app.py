@@ -1,11 +1,19 @@
 ﻿import psycopg2
 from flask import Flask, request, jsonify
 import bcrypt
+import jwt
+from datetime import datetime, timedelta
 from psycopg2 import sql
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 import os
 
 app = Flask(__name__)
 
+# Secret key for JWT signing
+app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
+jwt_manager = JWTManager(app)
+
+# Neon SQL Database connection string
 DB_URL = os.getenv("\ufeffDATABASE_URL")
 
 def get_db_connection():
@@ -76,7 +84,9 @@ def login():
         stored_password_hash = user[0].encode('utf-8')
 
         if bcrypt.checkpw(password.encode('utf-8'), stored_password_hash):
-            return jsonify({"message": "Login successful"}), 200
+            # Create JWT token that expires in 1 hour
+            access_token = create_access_token(identity=username, fresh=True, expires_delta=timedelta(hours=1))
+            return jsonify({"access_token": access_token}), 200
         else:
             return jsonify({"message": "Invalid username or password"}), 401
 
