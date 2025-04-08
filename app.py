@@ -94,5 +94,56 @@ def login():
         print(e)
         return jsonify({"message": "Error logging in"}), 500
 
-if __name__ == "__main__":
-    app.run(debug=True)
+@app.route('/match_profile', methods=["POST"])
+@jwt_required() 
+def match_profile():
+    username = get_jwt_identity()
+    data = request.get_json()
+    bio = data.get("bio")
+    images = data.get("images")
+    interests = data.get("interests")
+    font_color = data.get("font_color")
+    background_color = data.get("background_color")
+    font_type = data.get("font_type")
+
+    # Optionally validate input
+    if not any([bio, images, interests, font_color, background_color, font_type]):
+        return jsonify({"message": "Please provide at least one profile detail"}), 400
+
+    # Insert or update user profile in the database
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Check if user already has a profile entry
+        cur.execute(
+            sql.SQL("SELECT username FROM match_profile WHERE username = %s"),
+            [username]
+        )
+
+        existing_profile = cur.fetchone()
+
+        if existing_profile:
+            # If the profile exists, update it (optional, if you want to allow updates)
+            cur.execute(
+                sql.SQL("UPDATE match_profile SET bio = %s, images = %s, interests = %s, font_color = %s, background_color = %s, font_type = %s WHERE username = %s"),
+                [bio, images, interests, font_color, background_color, font_type, username]
+            )
+            message = "Profile updated successfully"
+        else:
+            # If no profile exists, insert a new profile
+            cur.execute(
+                sql.SQL("INSERT INTO match_profile (username, bio, images, interests, font_color, background_color, font_type) VALUES (%s, %s, %s, %s, %s, %s, %s)"),
+                [username, bio, images, interests, font_color, background_color, font_type]
+            )
+            message = "Profile created successfully"
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": message}), 201
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Error processing profile"}), 500

@@ -1,4 +1,5 @@
 ﻿import requests
+import login
 
 # just console for now
 def prompt_data():
@@ -8,6 +9,7 @@ def prompt_data():
 
 def send_data(username, password):
     requests.post('http://127.0.0.1:5000/register', json={'username': username, 'password': password})
+    login.send_data(username, password)
 
 if __name__=="__main__":
     prompt_data()
