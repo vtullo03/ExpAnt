@@ -4,7 +4,7 @@ import bcrypt
 import jwt
 from datetime import datetime, timedelta
 from psycopg2 import sql
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 import os
 
 app = Flask(__name__)
@@ -147,3 +147,6 @@ def match_profile():
     except Exception as e:
         print(e)
         return jsonify({"message": "Error processing profile"}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
