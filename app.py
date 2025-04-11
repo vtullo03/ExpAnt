@@ -94,9 +94,9 @@ def login():
         print(e)
         return jsonify({"message": "Error logging in"}), 500
 
-@app.route('/match_profile', methods=["POST"])
+@app.route('/update_match_profile', methods=["POST"])
 @jwt_required() 
-def match_profile():
+def update_match_profile():
     username = get_jwt_identity()
     data = request.get_json()
     bio = data.get("bio")
@@ -153,7 +153,7 @@ def match_profile():
 def create_connection():
     username = get_jwt_identity()
     data = request.get_json()
-    connection_username = data.get("connection_username")
+    connection_username = data.get("username")
 
     if not connection_username:
         return jsonify({"message": "Username for connection is required"}), 400
@@ -209,6 +209,80 @@ def get_connections():
     except Exception as e:
         print(e)
         return jsonify({"message": "Error fetching connections"}), 500
+
+@app.route('/create_message', methods=["POST"])
+@jwt_required()
+def create_message():
+    username = get_jwt_identity()
+    data = request.get_json()
+    receiver_username = data.get("username")
+    message = data.get("message")
+
+    if not receiver_username or not message:
+        return jsonify({"message": "Please provide both username and message"}), 400
+
+    if receiver_username == username:
+        return jsonify({"message": "Cannot message yourself"}), 400
+
+    if message == "":
+        return jsonify({"message": "Cannot send blank message"}), 400
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+                INSERT INTO messages (user_1, user_2, messages)
+                VALUES (%s, %s, %s)
+            """, (username, receiver_username, message))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": "Message created!"}), 201
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Failed to send message"}), 500
+
+@app.route('/messages/<other_username>', methods=["GET"])
+@jwt_required()
+def get_messages(other_username):
+    current_user = get_jwt_identity()
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT user_1, user_2, messages, created_at
+            FROM messages
+            WHERE (user_1 = %s AND user_2 = %s)
+               OR (user_1 = %s AND user_2 = %s)
+            ORDER BY created_at ASC
+        """, (current_user, other_username, other_username, current_user))
+
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        messages = [
+            {
+                "from": row[0],
+                "to": row[1],
+                "message": row[2],
+                "timestamp": row[3].isoformat()
+            }
+            for row in rows
+        ]
+
+        return jsonify({"messages": messages}), 200
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Could not retrieve messages"}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
