@@ -148,5 +148,67 @@ def match_profile():
         print(e)
         return jsonify({"message": "Error processing profile"}), 500
 
+@app.route('/add_connection', methods=["POST"])
+@jwt_required()
+def create_connection():
+    username = get_jwt_identity()
+    data = request.get_json()
+    connection_username = data.get("connection_username")
+
+    if not connection_username:
+        return jsonify({"message": "Username for connection is required"}), 400
+
+    if connection_username == username:
+        return jsonify({"message": "Cannot connect with yourself"}), 400
+
+    user_1, user_2 = sorted([username, connection_username])
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("INSERT INTO connections (user1_username, user2_username) VALUES (%s, %s)", (user_1, user_2))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({"message": "Connection created successfully"}), 201
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Error processing connection"}), 500
+
+@app.route('/connections', methods=["GET"])
+@jwt_required()
+def get_connections():
+    username = get_jwt_identity()
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+                    SELECT 
+                        CASE 
+                            WHEN user1_username = %s THEN user2_username
+                            ELSE user1_username
+                        END AS connection_username
+                    FROM connections
+                    WHERE user1_username = %s OR user2_username = %s
+                """, (username, username, username))
+
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        connections = [row[0] for row in rows]
+
+        return jsonify({"connections": connections}), 200
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Error fetching connections"}), 500
+
 if __name__ == "__main__":
     app.run(debug=True)
