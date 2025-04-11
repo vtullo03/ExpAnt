@@ -7,7 +7,7 @@ def prompt_data():
     send_data(username, password)
 
 def send_data(username, password):
-    response = requests.post('http://127.0.0.1:5000/login', json={'username': username, 'password': password})
+    response = requests.post('https://expant-backend.onrender.com/login', json={'username': username, 'password': password})
 
 if __name__=="__main__":
     prompt_data()

@@ -2,16 +2,22 @@
 import login
 
 # just console for now
-def prompt_data():
-    username = input("Please enter username: ")
-    password = input ("Please enter password: ")
-    send_data(username, password)
-
-def send_data(username, password):
-    requests.post('http://127.0.0.1:5000/register', json={'username': username, 'password': password})
+def send_data(username, password, is_org=False):
+    requests.post(
+        'https://expant-backend.onrender.com/register',
+        json={'username': username, 'password': password, 'is_organization': is_org}
+    )
     login.send_data(username, password)
 
-def create_match_profile()
+def prompt_data():
+    username = input("Please enter username: ")
+    password = input("Please enter password: ")
+    is_org_input = input("Is this an organization account? (y/n): ").strip().lower()
+    is_org = is_org_input == 'y'
+    send_data(username, password, is_org)
+
+
+def create_match_profile():
     print("Time to create your profile")
     bio = input("Bio: ")
     images = input("Images: ")
