@@ -25,7 +25,7 @@ def register():
     data = request.get_json()
     username = data.get("username")
     password = data.get("password")
-    is_organization = str(data.get("is_organization", "")).lower() == "true" # organization checkbox on register page
+    is_organization = data.get("is_organization", False) # organization checkbox on register page
 
     # Validate the input
     if not username or not password:
@@ -46,7 +46,7 @@ def register():
             )
         else: # regular user
             cur.execute(
-                sql.SQL("INSERT INTO jobforceusers (username, password_hash) VALUES (%s, %s)"),
+                sql.SQL("INSERT INTO jobforceuser (username, password_hash) VALUES (%s, %s)"),
                 [username, password_hash.decode('utf-8')]
             )
 

@@ -2,10 +2,10 @@
 import login
 
 # just console for now
-def send_data(username, password, is_org=False):
+def send_data(username, password, is_organization=False):
     requests.post(
         'https://expant-backend.onrender.com/register',
-        json={'username': username, 'password': password, 'is_organization': is_org}
+        json={'username': username, 'password': password, 'is_organization': is_organization}
     )
     login.send_data(username, password)
 

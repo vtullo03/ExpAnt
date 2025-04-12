@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/ # because dart files in here
 lib64/
 parts/
 sdist/
