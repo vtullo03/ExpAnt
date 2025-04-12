@@ -6,6 +6,7 @@ import 'home_page.dart';
 import 'organization_registration_page.dart';
 import 'account_setup_page.dart';
 import 'customize_profile_page.dart';
+import 'interest_selection_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,7 +32,7 @@ class MyApp extends StatelessWidget {
         '/organization_registration': (context) => const OrganizationRegistrationPage(),
         '/account_setup': (context) => const AccountSetupPage(),
         '/customize_profile': (context) => const CustomizeProfilePage(),
-      //  '/select_interests': (context) => const InterestSelectionPage(),
+        '/select_interests': (context) => const InterestSelectionPage(),
       },
     );
   }

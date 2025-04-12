@@ -16,6 +16,7 @@ class _RegisterPageState extends State<RegisterPage> {
   String _errorMessage = '';
 
   Future<void> register() async {
+    if (!mounted) return;
     setState(() => _errorMessage = ''); // Clear any previous error
 
     final url = Uri.parse('https://expant-backend.onrender.com/register');
@@ -25,33 +26,30 @@ class _RegisterPageState extends State<RegisterPage> {
       body: jsonEncode({
         'username': _usernameController.text,
         'password': _passwordController.text,
-        'is_organization': isOrganization, // HELP WTF I CANT GET IT TO WORK 
+        'is_organization': isOrganization,
       }),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-     /* if (isOrganization) {
-        Navigator.pushReplacementNamed(context, '/organization_registration');
-      } else {*/
+      final loginResponse = await http.post(
+        Uri.parse('https://expant-backend.onrender.com/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': _usernameController.text,
+          'password': _passwordController.text,
+        }),
+      );
 
-        final loginResponse = await http.post(
-          Uri.parse('https://expant-backend.onrender.com/login'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'username': _usernameController.text,
-            'password': _passwordController.text,
-          }),
-        );
-        if (loginResponse.statusCode == 200 || loginResponse.statusCode == 201) {
-          // IF REGISTERED AS STANDARD USER!! add org later, and also need to check with backend?
-          Navigator.pushReplacementNamed(context, '/account_setup');
-
-        }
+      if (loginResponse.statusCode == 200 || loginResponse.statusCode == 201) {
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/account_setup');
       }
-    else { //if username is taken
+    } else {
+      if (!mounted) return;
       setState(() => _errorMessage = 'Invalid registration combination');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
