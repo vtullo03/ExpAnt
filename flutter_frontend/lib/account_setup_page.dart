@@ -97,7 +97,14 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
                   backgroundColor: const Color(0xFF7BA273),
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                 ),
-                child: const Text("Next", style: TextStyle(fontSize: 16)),
+                child: const Text(
+                      "Next", 
+                      style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      ),
+                    ),
               )
             ],
           ),
