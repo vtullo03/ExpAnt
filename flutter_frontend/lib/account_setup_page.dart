@@ -12,14 +12,25 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
   final _lastName = TextEditingController();
   final _employment = TextEditingController();
   final _startDate = TextEditingController();
+  final _cityState = TextEditingController();
 
   String? selectedPronoun;
   String? selectedIndustry;
   String? selectedEducation;
+  String? selectedCountry;
 
   final List<String> pronouns = ['She/Her', 'He/Him', 'They/Them', 'Other'];
   final List<String> industries = ['Tech', 'Healthcare', 'Education', 'Finance'];
-  final List<String> educationLevels = ['High School', 'Bachelor’s', 'Master’s', 'PhD'];
+  final List<String> educationLevels = ['High School Diploma', 'Bachelor’s', 'Master’s', 'PhD', 'Other'];
+  final List<String> countries = [
+    'United States',
+    'Canada',
+    'United Kingdom',
+    'Australia',
+    'India',
+    'Germany',
+    'Other',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -70,21 +81,32 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
                 value: selectedEducation,
-                hint: const Text('Education diploma, Bachelor’s, etc.'),
+                hint: const Text('Highest completed education'),
                 items: educationLevels.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                 onChanged: (value) => setState(() => selectedEducation = value),
+              ),
+
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                value: selectedCountry,
+                hint: const Text('Country'),
+                items: countries.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                onChanged: (value) => setState(() => selectedCountry = value),
+              ),
+
+              const SizedBox(height: 10),
+              TextField(
+                controller: _cityState,
+                decoration: const InputDecoration(labelText: 'City/State'),
               ),
 
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
-                    child: TextField(controller: _employment, decoration: const InputDecoration(labelText: 'Employment')),
+                    child: TextField(controller: _employment, decoration: const InputDecoration(labelText: 'Current place of employment')),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextField(controller: _startDate, decoration: const InputDecoration(labelText: 'Start date')),
-                  ),
+                  const SizedBox(height: 10),
                 ],
               ),
 
@@ -98,14 +120,14 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                 ),
                 child: const Text(
-                      "Next", 
-                      style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      ),
-                    ),
-              )
+                  "Next",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

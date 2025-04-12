@@ -12,12 +12,11 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool isOrganization = false;
   String _errorMessage = '';
 
   Future<void> register() async {
     if (!mounted) return;
-    setState(() => _errorMessage = ''); // Clear any previous error
+    setState(() => _errorMessage = '');
 
     final url = Uri.parse('https://expant-backend.onrender.com/register');
     final response = await http.post(
@@ -26,7 +25,7 @@ class _RegisterPageState extends State<RegisterPage> {
       body: jsonEncode({
         'username': _usernameController.text,
         'password': _passwordController.text,
-        'is_organization': isOrganization,
+        'is_organization': false,
       }),
     );
 
@@ -50,7 +49,6 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,6 +69,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 40),
+
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -88,6 +87,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
+
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -105,36 +105,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     focusedBorder: UnderlineInputBorder(),
                   ),
                 ),
-                const SizedBox(height: 25),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Checkbox(
-                      value: isOrganization,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          isOrganization = value ?? false;
-                        });
-                      },
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'Organization account',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            '(requires verification before activation)',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
+
+                const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: register,
                   style: ElevatedButton.styleFrom(
@@ -147,9 +119,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   child: const Text(
                     'Register',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                 ),
+
                 if (_errorMessage.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),
@@ -158,13 +131,28 @@ class _RegisterPageState extends State<RegisterPage> {
                       style: const TextStyle(color: Colors.red),
                     ),
                   ),
-                const SizedBox(height: 40),
+
+                const SizedBox(height: 60),
                 TextButton(
                   onPressed: () {
                     Navigator.pop(context);
                   },
                   child: const Text(
                     'Already have an account?',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF7BA273),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/organization_registration');
+                  },
+                  child: const Text(
+                    'Company registration',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,

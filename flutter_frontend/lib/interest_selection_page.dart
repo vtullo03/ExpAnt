@@ -10,7 +10,8 @@ class InterestSelectionPage extends StatefulWidget {
 class _InterestSelectionPageState extends State<InterestSelectionPage> {
   final List<String> interests = [
     'Coding', 'Gaming', 'Travelling',
-    'Cooking', 'Drawing', 'Golfing',
+    'Cooking', 'Drawing', 'Golfing', 
+    'Music', 'Astrology', 'Food'
   ];
   final Set<String> selected = {};
 
