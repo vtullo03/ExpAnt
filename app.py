@@ -148,7 +148,7 @@ def update_match_profile():
         print(e)
         return jsonify({"message": "Error processing profile"}), 500
 
-@app.route('/add_connection', methods=["POST"])
+@app.route('/create_connection', methods=["POST"])
 @jwt_required()
 def create_connection():
     username = get_jwt_identity()
@@ -282,6 +282,71 @@ def get_messages(other_username):
     except Exception as e:
         print(e)
         return jsonify({"message": "Could not retrieve messages"}), 500
+
+@app.route('/create_forum', methods=["POST"])
+@jwt_required()
+def create_forum():
+    username = get_jwt_identity()
+    data = request.get_json()
+    title = data.get("title")
+    description = data.get("description")
+    images = data.get("images")
+
+    if not title or not description:
+        return jsonify({"message": "Need title or description"}), 500
+
+    if title == " " or description == " ":
+        return jsonify({"message": "Title or description cannot be blank"}), 500
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO forums (username, title, description, images)
+            VALUES (%s, %s, %s, %s)
+            """, (username, title, description, images))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'message': 'Forum post created successfully'}), 201
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Could not create forum post"}), 500
+
+@app.route('/create_comment/<forum_id>', methods=["POST"])
+@jwt_required()
+def create_comment(forum_id):
+    username = get_jwt_identity()
+    data = request.get_json()
+    description = data.get("description")
+    images = data.get("images")
+
+    if not description:
+        return jsonify({"message": "Need description"}), 500
+
+    if description == " ":
+        return jsonify({"message": "Description cannot be blank"}), 500
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO forum_comments (username, forum_id, description, images)
+            VALUES (%s, %s, %s, %s)
+            """, (username, forum_id, description, images))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'message': 'Comment created successfully'}), 201
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Could not create comment"}), 500
 
 
 if __name__ == "__main__":
