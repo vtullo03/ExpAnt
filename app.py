@@ -348,6 +348,78 @@ def create_comment(forum_id):
         print(e)
         return jsonify({"message": "Could not create comment"}), 500
 
+@app.route('/get_forum_ids/<other_username>', methods=["GET"])
+@jwt_required()
+def get_forum_ids(other_username):
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id FROM forums WHERE username = %s
+        """, (other_username,))
+
+        forum_ids = [row[0] for row in cur.fetchall()]
+
+        cur.close()
+        conn.close()
+
+        return jsonify({'forum_ids': forum_ids}), 200
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Could not retrieve forum IDs"}), 500
+
+@app.route('/forums/<forum_id>', methods=["GET"])
+@jwt_required()
+def get_forum(forum_id):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+                    SELECT username, title, description, images, created_time 
+                    FROM forums 
+                    WHERE id = %s
+                """, (forum_id,))
+        forum = cur.fetchone()
+
+        if not forum:
+            cur.close()
+            conn.close()
+            return jsonify({"message": "Forum not found"}), 404
+
+        cur.execute("""
+            SELECT username, description, created_time 
+            FROM forum_comments 
+            WHERE forum_id = %s
+        """, (forum_id,))
+        comments = cur.fetchall()
+
+        forum_data = {
+            'username': forum[0],
+            'title': forum[1],
+            'description': forum[2],
+            'images': forum[3],
+            'created_time': forum[4],
+            'comments': [
+                {
+                    'username': c[0],
+                    'description': c[1],
+                    'created_at': c[2].isoformat()
+                } for c in comments
+            ]
+        }
+
+        return jsonify(forum_data), 200
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Could not retrieve forum and comments"}), 500
+
+    cur.close()
+    conn.close()
 
 if __name__ == "__main__":
     app.run(debug=True)
