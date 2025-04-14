@@ -95,13 +95,13 @@ def login():
         return jsonify({"message": "Error logging in"}), 500
 
 @app.route('/update_match_profile', methods=["POST"])
-@jwt_required() 
+@jwt_required()
 def update_match_profile():
     username = get_jwt_identity()
     data = request.get_json()
 
     # Extract provided fields from request
-    fields = ["bio", "images", "interests", "font_color", "background_color", "font_type", "pronouns", "university", "company", "field", "location"]
+    fields = ["bio", "images", "interests", "font_color", "background_color", "font_type", "pronouns", "university", "company", "field", "location", "first_name", "last_name"]
     updates = {field: data.get(field) for field in fields}
 
     if not any(value is not None for value in updates.values()):
@@ -176,7 +176,9 @@ def get_match_profile(other_username):
             'university': profile[7],
             'company': profile[8],
             'field': profile[9],
-            'location': profile[9]
+            'location': profile[9],
+            'first_name': profile[10],
+            'last_name': profile[11]
         }
 
         return jsonify(profile_data), 200
