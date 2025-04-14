@@ -99,42 +99,46 @@ def login():
 def update_match_profile():
     username = get_jwt_identity()
     data = request.get_json()
-    bio = data.get("bio")
-    images = data.get("images")
-    interests = data.get("interests")
-    font_color = data.get("font_color")
-    background_color = data.get("background_color")
-    font_type = data.get("font_type")
 
-    # Optionally validate input
-    if not any([bio, images, interests, font_color, background_color, font_type]):
+    # Extract provided fields from request
+    fields = ["bio", "images", "interests", "font_color", "background_color", "font_type", "pronouns", "university", "company", "field", "location"]
+    updates = {field: data.get(field) for field in fields}
+
+    if not any(value is not None for value in updates.values()):
         return jsonify({"message": "Please provide at least one profile detail"}), 400
 
-    # Insert or update user profile in the database
     try:
         conn = get_db_connection()
         cur = conn.cursor()
 
-        # Check if user already has a profile entry
-        cur.execute(
-            sql.SQL("SELECT username FROM match_profile WHERE username = %s"),
-            [username]
-        )
-
+        # Fetch existing profile
+        cur.execute("SELECT * FROM match_profile WHERE username = %s", [username])
         existing_profile = cur.fetchone()
 
         if existing_profile:
-            # If the profile exists, update it (optional, if you want to allow updates)
+            col_names = [item[0] for item in cur.description]
+
+            existing_data = dict(zip(col_names, existing_profile))
+            for field, value in updates.items():
+                if value is not None:
+                    existing_data[field] = value  # Use new value if provided
+
+            update_fields = ", ".join([f"{field} = %s" for field in fields])
+            update_values = [existing_data[field] for field in fields]
+
             cur.execute(
-                sql.SQL("UPDATE match_profile SET bio = %s, images = %s, interests = %s, font_color = %s, background_color = %s, font_type = %s WHERE username = %s"),
-                [bio, images, interests, font_color, background_color, font_type, username]
+                f"UPDATE match_profile SET {update_fields} WHERE username = %s",
+                update_values + [username]
             )
             message = "Profile updated successfully"
         else:
-            # If no profile exists, insert a new profile
+            insert_fields = ", ".join(["username"] + [f for f in fields])
+            placeholders = ", ".join(["%s"] * (len(fields) + 1))
+            insert_values = [username] + [updates[f] for f in fields]
+
             cur.execute(
-                sql.SQL("INSERT INTO match_profile (username, bio, images, interests, font_color, background_color, font_type) VALUES (%s, %s, %s, %s, %s, %s, %s)"),
-                [username, bio, images, interests, font_color, background_color, font_type]
+                f"INSERT INTO match_profile ({insert_fields}) VALUES ({placeholders})",
+                insert_values
             )
             message = "Profile created successfully"
 
@@ -143,6 +147,39 @@ def update_match_profile():
         conn.close()
 
         return jsonify({"message": message}), 201
+
+    except Exception as e:
+        print(e)
+        return jsonify({"message": "Error processing profile"}), 500
+
+@app.route('/match_profile/<other_username>', methods=["GET"])
+@jwt_required()
+def get_match_profile(other_username):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT * FROM match_profile WHERE username = %s", [other_username])
+        profile = cur.fetchone()
+
+        if not profile:
+            return jsonify({"message": "Profile not found"}), 404
+
+        profile_data = {
+            'bio': profile[1],
+            'images': profile[2],
+            'interests': profile[3],
+            'font_color': profile[3],
+            'background_color': profile[4],
+            'font_type': profile[5],
+            'pronouns': profile[6],
+            'university': profile[7],
+            'company': profile[8],
+            'field': profile[9],
+            'location': profile[9]
+        }
+
+        return jsonify(profile_data), 200
 
     except Exception as e:
         print(e)
