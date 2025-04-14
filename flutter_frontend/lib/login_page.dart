@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,23 +17,32 @@ class _LoginPageState extends State<LoginPage> {
   String _errorMessage = '';
 
   Future<void> login() async {
-    final url = Uri.parse('https://expant-backend.onrender.com/login');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': _usernameController.text,
-        'password': _passwordController.text,
-      }),
-    );
+  final url = Uri.parse('https://expant-backend.onrender.com/login');
+  final response = await http.post(
+    url,
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'username': _usernameController.text,
+      'password': _passwordController.text,
+    }),
+  );
 
-    if (response.statusCode == 200) {
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    final token = data['access_token'];
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('authToken', token);
+
+    if (mounted) {
       setState(() => _errorMessage = '');
       Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      setState(() => _errorMessage = 'Invalid login combination');
     }
+  } else {
+    setState(() => _errorMessage = 'Invalid login combination');
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

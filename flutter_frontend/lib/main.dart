@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_frontend/forum_list_page.dart';
 import 'package:google_fonts/google_fonts.dart'; //fonts
 import 'login_page.dart';
 import 'register_page.dart';
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
         '/account_setup': (context) => const AccountSetupPage(),
         '/customize_profile': (context) => const CustomizeProfilePage(),
         '/select_interests': (context) => const InterestSelectionPage(),
+        '/forum_list': (context) => const ForumListPage(),
       },
     );
   }

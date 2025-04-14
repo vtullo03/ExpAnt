@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class InterestSelectionPage extends StatefulWidget {
   const InterestSelectionPage({super.key});
@@ -14,6 +17,7 @@ class _InterestSelectionPageState extends State<InterestSelectionPage> {
     'Music', 'Astrology', 'Food'
   ];
   final Set<String> selected = {};
+  bool isLoading = false;
 
   void toggleInterest(String interest) {
     setState(() {
@@ -23,6 +27,37 @@ class _InterestSelectionPageState extends State<InterestSelectionPage> {
         selected.add(interest);
       }
     });
+  }
+
+  Future<void> saveInterests() async {
+    setState(() => isLoading = true);
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('authToken');
+
+    if (token == null) {
+      print("No auth token found");
+      setState(() => isLoading = false);
+      return;
+    }
+
+    final response = await http.post(
+      Uri.parse('https://expant-backend.onrender.com/update_match_profile'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'interests': selected.toList(),
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      print("Error saving interests: ${response.body}");
+    }
+
+    setState(() => isLoading = false);
   }
 
   @override
@@ -108,11 +143,8 @@ class _InterestSelectionPageState extends State<InterestSelectionPage> {
             const Spacer(),
 
             ElevatedButton(
-              onPressed: selected.length >= 3
-                  ? () {
-                      // TODO: Save selected interests to backend
-                      Navigator.pushNamed(context, '/home');
-                    }
+              onPressed: selected.length >= 3 && !isLoading
+                  ? saveInterests
                   : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF7BA273),
@@ -120,7 +152,9 @@ class _InterestSelectionPageState extends State<InterestSelectionPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("Next", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text("Next", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
 
             const SizedBox(height: 30),

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart'; // COLORPICKER PACKAGE
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class CustomizeProfilePage extends StatefulWidget {
   const CustomizeProfilePage({super.key});
@@ -20,6 +23,46 @@ class _CustomizeProfilePageState extends State<CustomizeProfilePage> {
     2: 'Monospace',
   };
 
+  Future<void> submitProfile() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('authToken');
+
+  if (token == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No authentication token found.')),
+    );
+    return;
+  }
+
+  // Convert Flutter Color objects to hex int
+  final fontColorHex = fontColor.value & 0xFFFFFF; // strip alpha, 0xFF112233 -> 0x112233
+  final backgroundColorHex = backgroundColor.value & 0xFFFFFF;
+
+  final response = await http.post(
+    Uri.parse('https://expant-backend.onrender.com/update_match_profile'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({
+      'bio': _bioController.text,
+      'images': [],
+      'font_color': fontColorHex,
+      'background_color': backgroundColorHex,
+      'font_type': selectedFontType,
+    }),
+  );
+
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    Navigator.pushNamed(context, '/select_interests');
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to save profile: ${response.body}')),
+    );
+  }
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,8 +74,6 @@ class _CustomizeProfilePageState extends State<CustomizeProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 30),
-
-              // Skip for now
               Align(
                 alignment: Alignment.topLeft,
                 child: Container(
@@ -47,9 +88,7 @@ class _CustomizeProfilePageState extends State<CustomizeProfilePage> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
               const Text(
                 "Next, let’s\ncustomize\nyour profile!",
                 textAlign: TextAlign.center,
@@ -59,36 +98,30 @@ class _CustomizeProfilePageState extends State<CustomizeProfilePage> {
                   fontSize: 26,
                 ),
               ),
-
               const SizedBox(height: 12),
               const Text(
                 "This information will be used to\ncreate your “business card,” which\nyour potential connections will see.",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 15),
               ),
-
               const SizedBox(height: 32),
-
               const Align(
                 alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Bio (briefly introduce yourself)",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                child: Text(
+                  "Bio (briefly introduce yourself)",
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
+              ),
               const SizedBox(height: 6),
-              const SizedBox(height: 8),
               TextField(
-              controller: _bioController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: "Tell us a little about you...",
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.all(12),
-                 ),
-               ),
-
-
+                controller: _bioController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  hintText: "Tell us a little about you...",
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.all(12),
+                ),
+              ),
               const SizedBox(height: 30),
 
               // Font Color Picker
@@ -147,15 +180,33 @@ class _CustomizeProfilePageState extends State<CustomizeProfilePage> {
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
 
-              // Next Button
+              // Font Selection
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Font Type",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DropdownButton<int>(
+                value: selectedFontType,
+                isExpanded: true,
+                onChanged: (value) => setState(() => selectedFontType = value ?? 0),
+                items: fontOptions.entries.map((entry) {
+                  return DropdownMenuItem(
+                    value: entry.key,
+                    child: Text(entry.value),
+                  );
+                }).toList(),
+              ),
+
+              const SizedBox(height: 30),
               Align(
                 alignment: Alignment.bottomCenter,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/select_interests');
-                  },
+                  onPressed: submitProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF7BA273),
                     foregroundColor: Colors.white,
@@ -167,7 +218,6 @@ class _CustomizeProfilePageState extends State<CustomizeProfilePage> {
                   child: const Text("Next", style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),
-
               const SizedBox(height: 30),
             ],
           ),

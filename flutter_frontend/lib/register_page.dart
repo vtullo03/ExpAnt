@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class RegisterPage extends StatefulWidget {
@@ -41,6 +42,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
       if (loginResponse.statusCode == 200 || loginResponse.statusCode == 201) {
         if (!mounted) return;
+        final json = jsonDecode(loginResponse.body);
+        final token = json['access_token'];
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('authToken', token);
+
         Navigator.pushReplacementNamed(context, '/account_setup');
       }
     } else {
