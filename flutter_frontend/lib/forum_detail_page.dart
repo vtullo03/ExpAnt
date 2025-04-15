@@ -199,7 +199,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                                 ],
                               ),
                             );
-                          }).toList(),
+                          }),
 
                           const SizedBox(height: 16),
 
@@ -254,7 +254,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 String formatTimestamp(String raw) {
   try {
     final dt = DateTime.parse(raw).toUtc(); // Ensure it's UTC for consistency
-    return DateFormat('EEE, dd MMM yyyy HH:mm:ss').format(dt) + ' GMT';
+    return '${DateFormat('EEE, dd MMM yyyy HH:mm:ss').format(dt)} GMT';
   } catch (e) {
     return raw;
   }

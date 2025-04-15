@@ -8,7 +8,6 @@ import 'account_setup_page.dart';
 import 'customize_profile_page.dart';
 import 'interest_selection_page.dart';
 import 'forum_list_page.dart';
-import 'forum_detail_page.dart';
 import 'create_forum_page.dart';
 
 

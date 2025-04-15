@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class AccountSetupPage extends StatefulWidget {
   const AccountSetupPage({super.key});
@@ -11,7 +14,6 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
   final _firstName = TextEditingController();
   final _lastName = TextEditingController();
   final _employment = TextEditingController();
-  final _startDate = TextEditingController();
   final _cityState = TextEditingController();
 
   String? selectedPronoun;
@@ -31,6 +33,45 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
     'Germany',
     'Other',
   ];
+
+  Future<void> submitProfileInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('authToken');
+
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No authentication token found.')),
+      );
+      return;
+    }
+
+    final response = await http.post(
+      Uri.parse('https://expant-backend.onrender.com/update_match_profile'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+      'first_name': _firstName.text.trim(),
+      'last_name': _lastName.text.trim(),
+      'company': _employment.text.trim(),
+      'location': '${_cityState.text.trim()}, ${selectedCountry ?? ''}',
+      'pronouns': selectedPronoun ?? '',
+      'field': selectedIndustry ?? '',
+      'university': selectedEducation ?? '',
+      }
+    ),
+
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      Navigator.pushNamed(context, '/customize_profile');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save profile info: ${response.body}')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,11 +94,17 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
               Row(
                 children: [
                   Expanded(
-                    child: TextField(controller: _firstName, decoration: const InputDecoration(labelText: 'First name')),
+                    child: TextField(
+                      controller: _firstName,
+                      decoration: const InputDecoration(labelText: 'First name'),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: TextField(controller: _lastName, decoration: const InputDecoration(labelText: 'Last name')),
+                    child: TextField(
+                      controller: _lastName,
+                      decoration: const InputDecoration(labelText: 'Last name'),
+                    ),
                   ),
                 ],
               ),
@@ -104,17 +151,17 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
               Row(
                 children: [
                   Expanded(
-                    child: TextField(controller: _employment, decoration: const InputDecoration(labelText: 'Current place of employment')),
+                    child: TextField(
+                      controller: _employment,
+                      decoration: const InputDecoration(labelText: 'Current place of employment'),
+                    ),
                   ),
-                  const SizedBox(height: 10),
                 ],
               ),
 
               const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/customize_profile');
-                },
+                onPressed: submitProfileInfo,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF7BA273),
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
