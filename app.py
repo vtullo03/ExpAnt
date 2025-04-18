@@ -28,7 +28,7 @@ def register():
 
     # Validate the input
     if not username or not password:
-        return jsonify({"message": "Please provide all fields"}), 400
+        return jsonify({"message": "Please provide both username and password"}), 400
 
     # Hash the password using bcrypt
     password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
