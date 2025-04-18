@@ -141,7 +141,7 @@ async def login(user: UserAuth, Authorize: AuthJWT = Depends()):
 
 # POST for updating match profile
 @app.post("/update_match_profile")
-def update_match_profile(profile: MatchProfile, Authorize: AuthJWT = Depends()):
+async def update_match_profile(profile: MatchProfile, Authorize: AuthJWT = Depends()):
 
     Authorize.jwt_required()
     username = Authorize.get_jwt_subject()
@@ -205,4 +205,35 @@ def update_match_profile(profile: MatchProfile, Authorize: AuthJWT = Depends()):
 
     except Exception as e:
         logger.error(f"Error processing match profile for user {username}: {e}")
+        raise HTTPException(status_code=500, detail="Error processing profile")
+
+
+# GET for match profile
+@app.get("/match_profile/{other_username}")
+async def get_match_profile(other_username: str, Authorize: AuthJWT = Depends()):
+
+    Authorize.jwt_required()  # Ensure the user is authenticated
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("SELECT * FROM match_profile WHERE username = %s", [other_username])
+        profile = cur.fetchone()
+
+        if not profile:
+            logger.warning(f"Profile not found for username: {other_username}")  # Log the missing profile
+            raise HTTPException(status_code=404, detail="Profile not found")
+
+        col_names = [item[0] for item in cur.description]
+        data = dict(zip(col_names, profile))
+
+        cur.close()
+        conn.close()
+
+        return JSONResponse(content=data, status_code=200)
+
+    except Exception as e:
+        logger.error(f"Error fetching profile for {other_username}: {e}")
         raise HTTPException(status_code=500, detail="Error processing profile")
