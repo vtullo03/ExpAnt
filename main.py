@@ -9,6 +9,7 @@ from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
+from typing import Optional, List
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +39,21 @@ def get_config():
 class UserAuth(BaseModel):
     username: str
     password: str
+
+class MatchProfile(BaseModel):
+    bio: Optional[str] = None
+    images: Optional[List[str]] = None
+    interests: Optional[List[str]] = None
+    font_color: Optional[str] = None
+    background_color: Optional[str] = None
+    font_type: Optional[str] = None
+    pronouns: Optional[str] = None
+    university: Optional[str] = None
+    company: Optional[str] = None
+    field: Optional[str] = None
+    location: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 
 # POST for register
@@ -122,3 +138,71 @@ async def login(user: UserAuth, Authorize: AuthJWT = Depends()):
     except Exception as e:
         logger.error(f"Error logging in: {e}")  # Log error with exception
         raise HTTPException(status_code=500, detail="Error logging in")
+
+# POST for updating match profile
+@app.post("/update_match_profile")
+def update_match_profile(profile: MatchProfile, Authorize: AuthJWT = Depends()):
+
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+
+    # Turn model into dictionary -- throw error if there's nothing
+    updates = profile.dict()
+    if not any(v is not None for v in updates.values()):
+        logger.warning(f"Update attempt with no data by user: {username}")
+        raise HTTPException(status_code=400, detail="Please provide at least one profile detail")
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Fetch existing profile
+        cur.execute("SELECT * FROM match_profile WHERE username = %s", [username])
+        existing_profile = cur.fetchone()
+
+        if existing_profile:
+            # Profile found -- update it
+            # Get names of fields
+            col_names = [item[0] for item in cur.description]
+            existing_data = dict(zip(col_names, existing_profile))
+
+            for field, value in updates.items():
+                if value is not None:
+                    existing_data[field] = value  # Use new value if provided
+
+            update_fields = ", ".join([f"{field} = %s" for field in updates])
+            update_values = [existing_data[field] for field in updates]
+
+            # Update with any new values -- does not overwrite old ones
+            cur.execute(
+                f"UPDATE match_profile SET {update_fields} WHERE username = %s",
+                update_values + [username]
+            )
+
+            message = "Profile updated successfully"
+            logger.info(f"Profile updated for user: {username}")
+
+        else:
+            # No profile found -- create new profile
+            insert_fields = ", ".join(["username"] + [f for f in updates])
+            placeholders = ", ".join(["%s"] * (len(updates) + 1))
+            insert_values = [username] + [updates[f] for f in updates]
+
+            cur.execute(
+                f"INSERT INTO match_profile ({insert_fields}) VALUES ({placeholders})",
+                insert_values
+            )
+
+            message = "Profile created successfully"
+            logger.info(f"Profile created for user: {username}")
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {"message": message}
+
+    except Exception as e:
+        logger.error(f"Error processing match profile for user {username}: {e}")
+        raise HTTPException(status_code=500, detail="Error processing profile")
