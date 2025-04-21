@@ -55,6 +55,9 @@ class MatchProfile(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
 
+class Connection(BaseModel):
+    username: str
+
 
 # POST for register
 @app.post("/register")
@@ -212,7 +215,7 @@ async def update_match_profile(profile: MatchProfile, Authorize: AuthJWT = Depen
 @app.get("/match_profile/{other_username}")
 async def get_match_profile(other_username: str, Authorize: AuthJWT = Depends()):
 
-    Authorize.jwt_required()  # Ensure the user is authenticated
+    Authorize.jwt_required()
 
     try:
         # Connect to the database
@@ -237,3 +240,71 @@ async def get_match_profile(other_username: str, Authorize: AuthJWT = Depends())
     except Exception as e:
         logger.error(f"Error fetching profile for {other_username}: {e}")
         raise HTTPException(status_code=500, detail="Error processing profile")
+
+# POST for connection creation
+@app.post("/create_connection")
+async def create_connection(connection: Connection, Authorize: AuthJWT = Depends()):
+
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+    connection_username = connection.username
+
+    if not connection_username:
+        logger.warning(f"Connection attempt without username by {username}")
+        raise HTTPException(status_code=400, detail="Username for connection is required")
+
+    if connection_username == username:
+        logger.warning(f"User {username} attempted to connect with themselves")
+        raise HTTPException(status_code=400, detail="Cannot connect with yourself")
+
+    user_1, user_2 = sorted([username, connection_username])
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("INSERT INTO connections (user1_username, user2_username) VALUES (%s, %s)", (user_1, user_2))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        logger.info(f"Connection created between {user_1} and {user_2}")
+        return JSONResponse(content={"message": "Connection created successfully"}, status_code=201)
+
+    except Exception as e:
+        logger.error(f"Error creating connection between {user_1} and {user_2}: {e}")
+        raise HTTPException(status_code=500, detail="Error processing connection")
+
+# GET for connections
+@app.get("/connections")
+async def get_connections(Authorize: AuthJWT = Depends()):
+
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+                            SELECT 
+                                CASE 
+                                    WHEN user1_username = %s THEN user2_username
+                                    ELSE user1_username
+                                END AS connection_username
+                            FROM connections
+                            WHERE user1_username = %s OR user2_username = %s
+                        """, (username, username, username))
+
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        connections = [row[0] for row in rows]
+        return JSONResponse(content=connections, status_code=200)
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Error fetching connections")
