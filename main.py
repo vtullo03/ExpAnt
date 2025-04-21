@@ -376,3 +376,83 @@ async def create_comment(forum_id: int, comment: ForumComment, Authorize: AuthJW
     except Exception as e:
         logger.error(f"Error creating comment for user {username} on forum {forum_id}: {e}")
         raise HTTPException(status_code=500, detail="Could not create comment")
+
+# GET for forum via ID
+@app.get("/get_forum_ids/{other_username}")
+async def get_forum_ids(other_username: str, Authorize: AuthJWT = Depends()):
+
+    Authorize.jwt_required()
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id FROM forums WHERE username = %s
+        """, (other_username,))
+
+        forum_ids = [row[0] for row in cur.fetchall()]
+
+        cur.close()
+        conn.close()
+
+        return JSONResponse(content={"forum_ids": forum_ids}, status_code=200)
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Could not retrieve forum IDs")
+
+@app.get("/forums/{forum_id}")
+async def get_forum(forum_id: str, Authorize: AuthJWT = Depends()):
+
+    Authorize.jwt_required()
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Fetch the forum itself
+        cur.execute("""
+            SELECT username, title, description, images, created_time 
+            FROM forums 
+            WHERE id = %s
+        """, (forum_id,))
+        forum = cur.fetchone()
+
+        if not forum:
+            raise HTTPException(status_code=404, detail="Forum not found")
+
+        # Fetch the forum comments
+        cur.execute("""
+            SELECT username, description, created_time 
+            FROM forum_comments 
+            WHERE forum_id = %s
+        """, (forum_id,))
+        comments = cur.fetchall()
+
+        # Build response as json
+        forum_data = {
+            "username": forum[0],
+            "title": forum[1],
+            "description": forum[2],
+            "images": forum[3],
+            "created_time": forum[4].isoformat(),
+            "comments": [
+                {
+                    "username": c[0],
+                    "description": c[1],
+                    "created_at": c[2].isoformat()
+                } for c in comments
+            ]
+        }
+
+        cur.close()
+        conn.close()
+
+        return JSONResponse(content=forum_data, status_code=200)
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Could not retrieve forum and comments")
