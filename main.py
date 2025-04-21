@@ -58,6 +58,14 @@ class MatchProfile(BaseModel):
 class Connection(BaseModel):
     username: str
 
+class ForumPost(BaseModel):
+    title: str
+    description: str
+    images: Optional[List[str]] = None
+
+class ForumComment(BaseModel):
+    description: str
+    images: Optional[List[str]] = None
 
 # POST for register
 @app.post("/register")
@@ -308,3 +316,63 @@ async def get_connections(Authorize: AuthJWT = Depends()):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="Error fetching connections")
+
+# POST for forum creation
+@app.post("/create_forum")
+async def create_forum(post: ForumPost, Authorize: AuthJWT = Depends()):
+
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO forums (username, title, description, images)
+            VALUES (%s, %s, %s, %s)
+        """, (username, post.title, post.description, post.images))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        logger.info(f"Forum post created by user: {username}")
+        return {"message": "Forum post created successfully"}
+
+    except Exception as e:
+        logger.error(f"Error creating forum post for user {username}: {e}")
+        raise HTTPException(status_code=500, detail="Could not create forum post")
+
+# POST for comment creation
+@app.post("/create_comment/{forum_id}")
+async def create_comment(forum_id: int, comment: ForumComment, Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+
+    # Check for blank comments
+    if comment.description == "":
+        logger.warning(f"Blank comment attempted by user: {username}")
+        raise HTTPException(status_code=400, detail="Description cannot be blank")
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+                INSERT INTO forum_comments (username, forum_id, description, images)
+                VALUES (%s, %s, %s, %s)
+            """, (username, forum_id, comment.description, comment.images))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        logger.info(f"Comment created on forum {forum_id} by user: {username}")
+        return {"message": "Comment created successfully"}
+
+    except Exception as e:
+        logger.error(f"Error creating comment for user {username} on forum {forum_id}: {e}")
+        raise HTTPException(status_code=500, detail="Could not create comment")
