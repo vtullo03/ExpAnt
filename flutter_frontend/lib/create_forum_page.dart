@@ -53,7 +53,8 @@ class _CreateForumPageState extends State<CreateForumPage> {
       backgroundColor: const Color(0xFFF8F6E3),
       appBar: AppBar(
         backgroundColor: const Color(0xFF8B3A3A),
-        title: const Text("Create Post"),
+        iconTheme: const IconThemeData(color: Colors.white, size: 35),
+        title: const Text("Create Post", style: const TextStyle(color: Colors.white)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

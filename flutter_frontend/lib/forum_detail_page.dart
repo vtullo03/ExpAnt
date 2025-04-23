@@ -102,24 +102,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                       child: Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 35,),
                             onPressed: () => Navigator.pop(context),
-                          ),
-                          Expanded(
-                            child: TextField(
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: const Color(0xFFF8F6E3),
-                                hintText: 'Search comments...',
-                                hintStyle: const TextStyle(color: Colors.black),
-                                prefixIcon: const Icon(Icons.circle, color: Color(0xFFF4C88B)),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                              ),
-                            ),
                           ),
                         ],
                       ),

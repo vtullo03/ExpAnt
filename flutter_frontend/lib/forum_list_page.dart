@@ -97,89 +97,98 @@ class _ForumListPageState extends State<ForumListPage> {
 }
 
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F6E3),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: const Color(0xFF8B3A3A), //red header
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFFF8F6E3),
-                hintText: 'Search forum posts...',
-                hintStyle: const TextStyle(color: Colors.black),
-                prefixIcon: const Icon(Icons.circle, color: Color(0xFFF4C88B)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
+    @override
+    Widget build(BuildContext context) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8F6E3),
+        body: Column(
+          children: [
+            //Header Bar
+            Container(
+              color: const Color(0xFF8B3A3A), // deep red background
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F6E3), // cream/white pill
+                    borderRadius: BorderRadius.circular(40),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      "Forum",
+                      style: TextStyle(
+                        color: Color(0xFF7BA273),
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+
+
           Expanded(
             child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : filteredForums.isEmpty
-                    ? const Center(child: Text("No forums to display."))
-                    : ListView.builder(
-                        itemCount: filteredForums.length,
-                        itemBuilder: (context, index) {
-                          final forum = filteredForums[index];
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => ForumDetailPage(forumId: forum['id']),
-                                    ),
-                                  );
-                                },
-                                child: ListTile(
-                                  title: Text(
-                                    forum['title'] ?? '[title]',
-                                    style: const TextStyle(
-                                      color: Color(0xFF7BA273),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                    ),
+              ? const Center(child: CircularProgressIndicator())
+              : filteredForums.isEmpty
+                  ? const Center(child: Text("No forums to display."))
+                  : ListView.builder(
+                      itemCount: filteredForums.length,
+                      itemBuilder: (context, index) {
+                        final forum = filteredForums[index];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => ForumDetailPage(forumId: forum['id']),
                                   ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "${forum['username']} • ${formatTimestamp(forum['created_time'])}",
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
-                                    trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.comment_outlined, color: Colors.black),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        (forum['comments']?.length ?? 0).toString(),
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
+                                );
+                              },
+                              child: ListTile(
+                                title: Text(
+                                  forum['title'] ?? '[title]',
+                                  style: const TextStyle(
+                                    color: Color(0xFF7BA273),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
                                   ),
                                 ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "${forum['username']} • ${formatTimestamp(forum['created_time'])}",
+                                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                                  trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.comment_outlined, color: Colors.black),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      (forum['comments']?.length ?? 0).toString(),
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
                               ),
+                            ),
 
-                              const Divider(thickness: 1),
-                            ],
-                          );
-                        },
-                      ),
+                            const Divider(thickness: 1),
+                          ],
+                        );
+                      },
+                    ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6),
