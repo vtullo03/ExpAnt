@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:intl/intl.dart';
 import 'forum_detail_page.dart';
 
 
@@ -37,24 +38,33 @@ class _ForumListPageState extends State<ForumListPage> {
   }
 
   Future<void> fetchForums() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('authToken');
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('authToken');
 
-    if (token == null) {
-      print('No token found');
-      return;
-    }
+  if (token == null) {
+    print('No token found');
+    return;
+  }
 
-    final response = await http.get(
-      Uri.parse('https://expant-backend.onrender.com/get_forum_ids/pee'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
-    );
+  final response = await http.get(
+    Uri.parse('https://expant-backend.onrender.com/feed'),
+    headers: {
+      'Authorization': 'Bearer $token',
+    },
+  );
 
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      final ids = List<int>.from(json['forum_ids']);
+  print('DEBUG raw response.body = ${response.body}');
+
+  if (response.statusCode == 200) {
+    try {
+      final nestedIds = jsonDecode(response.body) as List;
+      //Flatten the nested list of forum IDs
+      final ids = (nestedIds)
+          .expand((item) => item is List ? item : [item])
+          .cast<int>()
+          .toList();
+
+      print('DEBUG flattened ids = $ids');
 
       final List<Map<String, dynamic>> loadedForums = [];
 
@@ -68,7 +78,7 @@ class _ForumListPageState extends State<ForumListPage> {
 
         if (forumResponse.statusCode == 200) {
           final forumData = jsonDecode(forumResponse.body);
-          forumData['id'] = id; // Ensure ID is included in the forum map
+          forumData['id'] = id;
           loadedForums.add(forumData);
         }
       }
@@ -78,10 +88,14 @@ class _ForumListPageState extends State<ForumListPage> {
         filteredForums = loadedForums;
         isLoading = false;
       });
-    } else {
-      print('Failed to load forums: ${response.body}');
+    } catch (e) {
+      print('DEBUG error during JSON decoding or flattening: $e');
     }
+  } else {
+    print('Failed to load forums: ${response.body}');
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +105,7 @@ class _ForumListPageState extends State<ForumListPage> {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: const Color(0xFF8B3A3A), // red header
+            color: const Color(0xFF8B3A3A), //red header
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -142,8 +156,8 @@ class _ForumListPageState extends State<ForumListPage> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        "${forum['username']} • ${forum['created_time']} • ID: ${forum['id']}",
-                                        style: const TextStyle(fontSize: 13),
+                                        "${forum['username']} • ${formatTimestamp(forum['created_time'])}",
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                                       ),
                                     ],
                                   ),
@@ -153,7 +167,7 @@ class _ForumListPageState extends State<ForumListPage> {
                                       const Icon(Icons.comment_outlined, color: Colors.black),
                                       const SizedBox(width: 4),
                                       Text(
-                                        (forum['comments']?.length ?? 0).toString(), // ← updated!
+                                        (forum['comments']?.length ?? 0).toString(),
                                         style: const TextStyle(fontWeight: FontWeight.bold),
                                       ),
                                     ],
@@ -193,7 +207,9 @@ class _ForumListPageState extends State<ForumListPage> {
                     ),
                     child: const Text(
                       '+ Create post',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,),
                     ),
                   ),
                 ),
@@ -204,4 +220,14 @@ class _ForumListPageState extends State<ForumListPage> {
       ),
     );
   }
+
+  String formatTimestamp(String raw) {
+  try {
+    final dt = DateTime.parse(raw).toUtc(); //Ensure UTC for consistency
+    return '${DateFormat('EEE, dd MMM yyyy HH:mm:ss').format(dt)} GMT';
+  } catch (e) {
+    return raw;
+  }
 }
+}
+

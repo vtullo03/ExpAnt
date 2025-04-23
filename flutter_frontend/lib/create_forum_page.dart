@@ -31,12 +31,12 @@ class _CreateForumPageState extends State<CreateForumPage> {
       body: jsonEncode({
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
-        'Images': [], // you can expand this later
+        'Images': [], 
       }),
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      Navigator.pop(context); // go back to forum list page
+      Navigator.pop(context); //back to forum list page
     } else {
       print("Failed to create forum: ${response.body}");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,7 +88,9 @@ class _CreateForumPageState extends State<CreateForumPage> {
               ),
               child: isSubmitting
                   ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("+ Submit", style: TextStyle(fontWeight: FontWeight.bold)),
+                  : const Text("+ Submit", style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white)),
             ),
           ],
         ),

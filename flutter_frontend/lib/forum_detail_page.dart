@@ -79,7 +79,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       _commentController.clear();
-      await fetchForumDetails(); // Refresh forum after submitting
+      await fetchForumDetails(); //refresh forum after submitting this comment
     } else {
       print("Failed to submit comment: ${response.body}");
     }
@@ -95,7 +95,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
               ? const Center(child: Text("Forum not found."))
               : Column(
                   children: [
-                    // Header Bar
+                    //Header Bar
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       color: const Color(0xFF8B3A3A),
@@ -125,11 +125,11 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                       ),
                     ),
 
-                    // Main Content
+                    //Main content
                     Expanded(
                       child: ListView(
                         children: [
-                          // Forum details
+                          //Forum details: title, username, timestamp, ID(?)
                           Container(
                             padding: const EdgeInsets.all(16),
                             child: Column(
@@ -145,8 +145,8 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  "${forum!['username']} • ${forum!['created_time']} • ID: ${forum!['id']}",
-                                  style: const TextStyle(fontSize: 13),
+                                  "${forum!['username']} • ${formatTimestamp(forum!['created_time'])}",
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold,),
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
@@ -177,7 +177,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                           ),
                           const Divider(),
 
-                          // Comments list
+                          //Comments list
                           ...comments.asMap().entries.map((entry) {
                             final index = entry.key + 1;
                             final comment = entry.value;
@@ -191,11 +191,12 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text("ID: #$index", style: const TextStyle(fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 4),
-                                  Text("@${comment['username']} • ${formatTimestamp(comment['created_at'])}"),
+                                  Text(
+                                    "@${comment['username']} • ${formatTimestamp(comment['created_at'])}",
+                                    style: const TextStyle(fontWeight: FontWeight.bold,)),
                                   const SizedBox(height: 4),
-                                  Text(comment['comment'] ?? '', style: const TextStyle(fontSize: 14)),
+                                  Text(comment['description'] ?? '', style: const TextStyle(fontSize: 14)),
                                 ],
                               ),
                             );
@@ -203,7 +204,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
                           const SizedBox(height: 16),
 
-                          // Add comment input
+                          //Comment input
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16.0),
                             child: TextField(
@@ -221,7 +222,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                           ),
                           const SizedBox(height: 10),
 
-                          // Submit button
+                          //Submit button
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Row(
@@ -253,7 +254,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
 String formatTimestamp(String raw) {
   try {
-    final dt = DateTime.parse(raw).toUtc(); // Ensure it's UTC for consistency
+    final dt = DateTime.parse(raw).toUtc(); //Ensure UTC for consistency
     return '${DateFormat('EEE, dd MMM yyyy HH:mm:ss').format(dt)} GMT';
   } catch (e) {
     return raw;

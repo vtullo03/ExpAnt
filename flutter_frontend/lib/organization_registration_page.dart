@@ -11,13 +11,12 @@ class _OrganizationRegistrationPageState extends State<OrganizationRegistrationP
   final TextEditingController _emailController = TextEditingController();
 
   void _submit() {
-    // You can add your API call here to submit the email
     final email = _emailController.text;
     if (email.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Submitted successfully!')),
       );
-      Navigator.pop(context); // return to login page
+      Navigator.pop(context); //return to login page
     }
   }
 
@@ -82,7 +81,7 @@ class _OrganizationRegistrationPageState extends State<OrganizationRegistrationP
             Center(
               child: TextButton(
                 onPressed: () {
-                  Navigator.pop(context); // Back to login
+                  Navigator.pop(context); //go back to login
                 },
                 child: const Text(
                   'Back to login',

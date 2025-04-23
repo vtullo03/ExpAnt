@@ -34,8 +34,8 @@ class _CustomizeProfilePageState extends State<CustomizeProfilePage> {
     return;
   }
 
-  // Convert Flutter Color objects to hex int
-  final fontColorHex = fontColor.value & 0xFFFFFF; // strip alpha, 0xFF112233 -> 0x112233
+  //Convert color to hex int 
+  final fontColorHex = fontColor.value & 0xFFFFFF;
   final backgroundColorHex = backgroundColor.value & 0xFFFFFF;
 
   final response = await http.post(
@@ -124,7 +124,7 @@ class _CustomizeProfilePageState extends State<CustomizeProfilePage> {
               ),
               const SizedBox(height: 30),
 
-              // Font Color Picker
+              //Font Color Picker
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -153,7 +153,7 @@ class _CustomizeProfilePageState extends State<CustomizeProfilePage> {
 
               const SizedBox(height: 20),
 
-              // Background Color Picker
+              //Background Color Picker
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -182,7 +182,7 @@ class _CustomizeProfilePageState extends State<CustomizeProfilePage> {
 
               const SizedBox(height: 20),
 
-              // Font Selection
+              //Font Selection
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(

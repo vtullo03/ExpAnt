@@ -30,6 +30,8 @@ class _RegisterPageState extends State<RegisterPage> {
       }),
     );
 
+    print('Response: ${response.statusCode} - ${response.body}');
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       final loginResponse = await http.post(
         Uri.parse('https://expant-backend.onrender.com/login'),
@@ -52,7 +54,7 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } else {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Invalid registration combination');
+      setState(() => _errorMessage = 'Invalid registration combination'); //display this error message on screen
     }
   }
 

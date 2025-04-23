@@ -27,6 +27,8 @@ class _LoginPageState extends State<LoginPage> {
     }),
   );
 
+  print('Response: ${response.statusCode} - ${response.body}');
+
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     final token = data['access_token'];
@@ -47,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F6E3), // light cream background I CANT GET THE RIGHT COLOR AS THE ONE ON FIGMA BRUH
+      backgroundColor: const Color(0xFFF8F6E3),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 36.0),
@@ -60,7 +62,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF7BA273), // green
+                    color: Color(0xFF7BA273),
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -102,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
                 ElevatedButton(
                   onPressed: login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF4C88B), // peachy orange
+                    backgroundColor: const Color(0xFFF4C88B), 
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -132,7 +134,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF7BA273), // green
+                    color: Color(0xFF7BA273), 
                   ),
                 ),
               ),

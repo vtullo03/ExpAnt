@@ -10,7 +10,6 @@ import 'interest_selection_page.dart';
 import 'forum_list_page.dart';
 import 'create_forum_page.dart';
 
-
 void main() {
   runApp(const MyApp());
 }
@@ -21,7 +20,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter + Flask Auth',
+      title: 'Flutter + FastAPI Auth',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         textTheme: GoogleFonts.lexendDecaTextTheme(),

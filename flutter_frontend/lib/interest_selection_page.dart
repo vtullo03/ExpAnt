@@ -71,7 +71,6 @@ class _InterestSelectionPageState extends State<InterestSelectionPage> {
           children: [
             const SizedBox(height: 30),
 
-            // Skip for now
             Align(
               alignment: Alignment.topLeft,
               child: Container(
@@ -116,7 +115,7 @@ class _InterestSelectionPageState extends State<InterestSelectionPage> {
 
             const SizedBox(height: 24),
 
-            // Interest buttons
+            //Clickable interest buttons
             Wrap(
               spacing: 12,
               runSpacing: 12,
