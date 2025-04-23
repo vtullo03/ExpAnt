@@ -377,7 +377,7 @@ async def create_comment(forum_id: int, comment: ForumComment, Authorize: AuthJW
         logger.error(f"Error creating comment for user {username} on forum {forum_id}: {e}")
         raise HTTPException(status_code=500, detail="Could not create comment")
 
-# GET for forum via ID
+# GET for forum via username
 @app.get("/get_forum_ids/{other_username}")
 async def get_forum_ids(other_username: str, Authorize: AuthJWT = Depends()):
 
@@ -403,6 +403,7 @@ async def get_forum_ids(other_username: str, Authorize: AuthJWT = Depends()):
         print(e)
         raise HTTPException(status_code=500, detail="Could not retrieve forum IDs")
 
+# GET for forums via ID
 @app.get("/forums/{forum_id}")
 async def get_forum(forum_id: str, Authorize: AuthJWT = Depends()):
 
@@ -456,3 +457,48 @@ async def get_forum(forum_id: str, Authorize: AuthJWT = Depends()):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="Could not retrieve forum and comments")
+
+# GET for forum posts via usernames from connection
+@app.get("/feed")
+async def get_feed(Authorize: AuthJWT = Depends()):
+
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Get all usernames from connections
+        cur.execute("""
+            SELECT 
+                CASE 
+                    WHEN user1_username = %s THEN user2_username
+                    ELSE user1_username
+                END AS connection_username
+            FROM connections
+            WHERE user1_username = %s OR user2_username = %s
+        """, (username, username, username))
+
+        rows = cur.fetchall()
+        posts = []
+
+        # For each user get forum posts
+        for user in rows:
+
+            cur.execute("""
+                        SELECT id FROM forums WHERE username = %s
+                    """, (user,))
+
+            forum_ids = [row[0] for row in cur.fetchall()]
+            posts.append(forum_ids)
+
+        cur.close()
+        conn.close()
+
+        return JSONResponse(content=posts, status_code=200)
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Could not get feed")
