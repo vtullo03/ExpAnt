@@ -67,6 +67,18 @@ class ForumComment(BaseModel):
     description: str
     images: Optional[List[str]] = None
 
+def require_worker(Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
+    user_type = Authorize.get_raw_jwt().get("user_type")
+    if user_type != "worker":
+        raise HTTPException(status_code=403, detail="Access restricted to worker users only")
+
+def require_organization(Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
+    user_type = Authorize.get_raw_jwt().get("user_type")
+    if user_type != "official":
+        raise HTTPException(status_code=403, detail="Access restricted to official organizations only")
+
 # POST for register
 @app.post("/register")
 async def register(user: UserAuth):
@@ -116,12 +128,23 @@ async def login(user: UserAuth, Authorize: AuthJWT = Depends()):
         conn = get_db_connection()
         cur = conn.cursor()
 
+        # First check if the user is a normal worker
         cur.execute(
-            sql.SQL("SELECT password_hash FROM jobforceusers WHERE username = %s"),
+            sql.SQL("SELECT password_hash, 'worker' as user_type FROM jobforceusers WHERE username = %s"),
             [user.username]
         )
-
         result = cur.fetchone()
+
+        # Then check if it's an official organization if it's not a normal worker
+        # This may break in the edge case that a worker and organization have the exact same user and password
+        # But by setting user_type, we can now auth which user connected
+        if result is None:
+            cur.execute(
+                sql.SQL("SELECT password_hash, 'official' as user_type FROM official_company WHERE username = %s"),
+                [user.username]
+            )
+            result = cur.fetchone()
+
         cur.close()
         conn.close()
 
@@ -131,13 +154,15 @@ async def login(user: UserAuth, Authorize: AuthJWT = Depends()):
 
         # PostgreSQL returns BYTEA as memoryview because they hate all programmers
         stored_password_hash = bytes(result[0]) # convert memoryview to bytes
+        user_type = result[1]
 
         # Compare the provided password with the stored hash
         if bcrypt.checkpw(user.password.encode('utf-8'), stored_password_hash):
             # If the password matches, generate a JWT token
             access_token = Authorize.create_access_token(
                 subject=user.username,
-                expires_time=timedelta(hours=1)
+                expires_time=timedelta(hours=1),
+                user_claims={"user_type": user_type}
             )
             logger.info(f"User {user.username} logged in successfully")  # Log successful login
             return {"access_token": access_token}
@@ -152,7 +177,7 @@ async def login(user: UserAuth, Authorize: AuthJWT = Depends()):
 
 # POST for updating match profile
 @app.post("/update_match_profile")
-async def update_match_profile(profile: MatchProfile, Authorize: AuthJWT = Depends()):
+async def update_match_profile(profile: MatchProfile, Authorize: AuthJWT = Depends(require_worker)):
 
     Authorize.jwt_required()
     username = Authorize.get_jwt_subject()
@@ -221,7 +246,7 @@ async def update_match_profile(profile: MatchProfile, Authorize: AuthJWT = Depen
 
 # GET for match profile
 @app.get("/match_profile/{other_username}")
-async def get_match_profile(other_username: str, Authorize: AuthJWT = Depends()):
+async def get_match_profile(other_username: str, Authorize: AuthJWT = Depends(require_worker)):
 
     Authorize.jwt_required()
 
@@ -251,7 +276,7 @@ async def get_match_profile(other_username: str, Authorize: AuthJWT = Depends())
 
 # POST for connection creation
 @app.post("/create_connection")
-async def create_connection(connection: Connection, Authorize: AuthJWT = Depends()):
+async def create_connection(connection: Connection, Authorize: AuthJWT = Depends(require_worker)):
 
     Authorize.jwt_required()
     username = Authorize.get_jwt_subject()
@@ -286,7 +311,7 @@ async def create_connection(connection: Connection, Authorize: AuthJWT = Depends
 
 # GET for connections
 @app.get("/connections")
-async def get_connections(Authorize: AuthJWT = Depends()):
+async def get_connections(Authorize: AuthJWT = Depends(require_worker)):
 
     Authorize.jwt_required()
     username = Authorize.get_jwt_subject()
@@ -319,7 +344,7 @@ async def get_connections(Authorize: AuthJWT = Depends()):
 
 # POST for forum creation
 @app.post("/create_forum")
-async def create_forum(post: ForumPost, Authorize: AuthJWT = Depends()):
+async def create_forum(post: ForumPost, Authorize: AuthJWT = Depends(require_worker)):
 
     Authorize.jwt_required()
     username = Authorize.get_jwt_subject()
@@ -347,7 +372,7 @@ async def create_forum(post: ForumPost, Authorize: AuthJWT = Depends()):
 
 # POST for comment creation
 @app.post("/create_comment/{forum_id}")
-async def create_comment(forum_id: int, comment: ForumComment, Authorize: AuthJWT = Depends()):
+async def create_comment(forum_id: int, comment: ForumComment, Authorize: AuthJWT = Depends(require_worker)):
     Authorize.jwt_required()
     username = Authorize.get_jwt_subject()
 
@@ -379,7 +404,7 @@ async def create_comment(forum_id: int, comment: ForumComment, Authorize: AuthJW
 
 # GET for forum via username
 @app.get("/get_forum_ids/{other_username}")
-async def get_forum_ids(other_username: str, Authorize: AuthJWT = Depends()):
+async def get_forum_ids(other_username: str, Authorize: AuthJWT = Depends(require_worker)):
 
     Authorize.jwt_required()
 
@@ -460,7 +485,7 @@ async def get_forum(forum_id: str, Authorize: AuthJWT = Depends()):
 
 # GET for forum posts via usernames from connection
 @app.get("/feed")
-async def get_feed(Authorize: AuthJWT = Depends()):
+async def get_feed(Authorize: AuthJWT = Depends(require_worker)):
 
     Authorize.jwt_required()
     username = Authorize.get_jwt_subject()
@@ -505,7 +530,7 @@ async def get_feed(Authorize: AuthJWT = Depends()):
 
 # GET for matches
 @app.get("/matches_today")
-async def get_matches(Authorize: AuthJWT = Depends()):
+async def get_matches(Authorize: AuthJWT = Depends(require_worker)):
 
     Authorize.jwt_required()
     username = Authorize.get_jwt_subject()
