@@ -502,3 +502,66 @@ async def get_feed(Authorize: AuthJWT = Depends()):
     except Exception as e:
         print(e)
         raise HTTPException(status_code=500, detail="Could not get feed")
+
+# GET for matches
+@app.get("/matches_today")
+async def get_matches(Authorize: AuthJWT = Depends()):
+
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Get current user field, location, and interests
+        cur.execute("""
+                    SELECT field, location, interests 
+                    FROM match_profile 
+                    WHERE username = %s
+                """, (username,))
+        result = cur.fetchone()
+
+        if not result:
+            raise HTTPException(status_code=404, detail="No matches found")
+
+        field, location, interests = result
+        # Because this is an optional field and we wanna give prio -- account for when it's empty
+        if interests is None:
+            interests = []
+
+        # Have to put username like a million times to check if users are connected
+        # Selects 10 USERS ONLY with same field in same area -- gets prio to users with same interests
+        cur.execute("""
+            SELECT *, 
+                CARDINALITY(ARRAY(SELECT UNNEST(interests) INTERSECT SELECT UNNEST(%s::text[]))) AS shared_interest_count
+            FROM match_profile
+            WHERE field = %s 
+              AND location = %s 
+              AND username != %s
+              AND username NOT IN (
+                  SELECT CASE
+                      WHEN user1_username = %s THEN user2_username
+                      ELSE user1_username
+                  END AS connection_username
+                  FROM connections
+                  WHERE user1_username = %s OR user2_username = %s
+              )
+            ORDER BY shared_interest_count DESC NULLS LAST
+            LIMIT 10
+        """, (interests, field, location, username, username, username, username))
+        col_names = [desc[0] for desc in cur.description]
+
+        matches = cur.fetchall()
+        col_names = [desc[0] for desc in cur.description]
+        match_profiles = [dict(zip(col_names, match)) for match in matches]
+
+        cur.close()
+        conn.close()
+
+        return JSONResponse(content=match_profiles, status_code=200)
+
+    except Exception as e:
+        logger.error(f"Error fetching matches for {username}: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching matches")
