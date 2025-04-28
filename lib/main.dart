@@ -1,6 +1,7 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'profile_swipe_screen.dart';
 import 'chat_screen.dart';
 
 void main() {
@@ -14,7 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: MessageScreen(),
+      home: ProfileSwipeScreen(), // 👈 set this as the home!
     );
   }
 }
@@ -93,8 +94,11 @@ class MessageScreen extends StatelessWidget {
         unselectedItemColor: Color(0xFF3B2C2F),
         currentIndex: 3,
         onTap: (index) {
+          if (index == 2) {
+            Navigator.pop(context); 
+        }
           if (index == 3) {
-              Navigator.pop(context); // 💚 back to message list
+              Navigator.pop(context); 
             }
           },
         items: const [

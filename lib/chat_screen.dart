@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'profile_swipe_screen.dart';
+import 'chat_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final String name;
@@ -182,6 +184,12 @@ class _ChatScreenState extends State<ChatScreen> {
               unselectedItemColor: const Color(0xFF3B2C2F),
               currentIndex: 3,
               onTap: (index) {
+              if (index == 2) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ProfileSwipeScreen()),
+                );
+              } 
               if (index == 3) {
                   Navigator.pop(context); // 💚 back to message list
                 }
