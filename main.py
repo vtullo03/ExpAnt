@@ -67,17 +67,26 @@ class ForumComment(BaseModel):
     description: str
     images: Optional[List[str]] = None
 
+class JobPosting(BaseModel):
+    title: str
+    description: str
+    location: Optional[str] = None
+    salary: Optional[int] = None
+    company_website_link: Optional[str] = None
+
 def require_worker(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     user_type = Authorize.get_raw_jwt().get("user_type")
     if user_type != "worker":
         raise HTTPException(status_code=403, detail="Access restricted to worker users only")
+    return Authorize
 
 def require_organization(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     user_type = Authorize.get_raw_jwt().get("user_type")
     if user_type != "official":
         raise HTTPException(status_code=403, detail="Access restricted to official organizations only")
+    return Authorize
 
 # POST for register
 @app.post("/register")
@@ -113,6 +122,39 @@ async def register(user: UserAuth):
         logger.error(f"Error registering user: {e}")  # Log error with exception
         raise HTTPException(status_code=500, detail="Error registering user")
 
+# POST for register
+@app.post("/organization")
+async def organization(user: UserAuth):
+
+    # Make sure username and password were put in
+    if not user.username or not user.password:
+        logger.warning("Username or password missing during organization creation attempt")  # Log warning if data is missing
+        raise HTTPException(status_code=400, detail="Please provide both username and password")
+
+    # Hash the password as bytes
+    password_hash = bcrypt.hashpw(user.password.encode('utf-8'), bcrypt.gensalt())
+
+    # Insert the new user into the database
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Insert the password_hash as bytes
+        cur.execute(
+            sql.SQL("INSERT INTO official_company (username, password_hash) VALUES (%s, %s)"),
+            [user.username, psycopg2.Binary(password_hash)]  # Store as binary
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        logger.info(f"User {user.username} registered successfully")  # Log success
+        return {"message": "User registered successfully"}
+
+    except Exception as e:
+        logger.error(f"Error registering user: {e}")  # Log error with exception
+        raise HTTPException(status_code=500, detail="Error registering user")
 
 # POST for login
 @app.post("/login")
@@ -590,3 +632,83 @@ async def get_matches(Authorize: AuthJWT = Depends(require_worker)):
     except Exception as e:
         logger.error(f"Error fetching matches for {username}: {e}")
         raise HTTPException(status_code=500, detail="Error fetching matches")
+
+# POST for job postings
+@app.post("/create_job_posting")
+async def create_job_posting(post: JobPosting, Authorize: AuthJWT = Depends()):
+
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+    user_type = Authorize.get_raw_jwt().get("user_type")
+
+    if (user_type != "official"):
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO job_postings (username, title, description, location, salary, company_website_link)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (username, post.title, post.description, post.location, post.salary, post.company_website_link))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        logger.info(f"Job posting created by organization: {username}")
+        return {"message": "Job posting created successfully"}
+
+    except Exception as e:
+        logger.error(f"Error creating job posting for organization {username}: {e}")
+        raise HTTPException(status_code=500, detail="Could not create job posting")
+
+# GET for job postings
+@app.get("/job_postings")
+async def get_job_postings(Authorize: AuthJWT = Depends(require_worker)):
+
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+                    SELECT location
+                    FROM match_profile
+                    WHERE username = %s
+                """, (username,))
+
+        worker_location = cur.fetchone()
+
+        if not worker_location:
+            raise HTTPException(status_code=404, detail="Worker's location not found")
+
+        worker_location = worker_location[0].strip()
+
+        # prioritize location
+        cur.execute("""
+            SELECT *
+            FROM job_postings
+            WHERE location = %s
+        """, (worker_location,))
+        rows = cur.fetchall()
+
+        if rows:
+            logger.info(f"Job postings retrieved: {len(rows)} postings found.")
+        else:
+            logger.info("No job postings found for the worker's location.")
+
+        col_names = [desc[0] for desc in cur.description]
+        postings = [dict(zip(col_names, row)) for row in rows]
+
+        cur.close()
+        conn.close()
+
+        return JSONResponse(content=postings, status_code=200)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Could not retrieve job postings")
