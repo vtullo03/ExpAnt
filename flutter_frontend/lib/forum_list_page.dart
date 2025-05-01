@@ -101,36 +101,33 @@ class _ForumListPageState extends State<ForumListPage> {
     Widget build(BuildContext context) {
       return Scaffold(
         backgroundColor: const Color(0xFFF8F6E3),
+        appBar: AppBar(
+        backgroundColor: const Color(0xFF8B3A3A),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context); //Goes back to home
+          },
+        ),
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F6E3),
+            borderRadius: BorderRadius.circular(40),
+          ),
+          child: const Text(
+            "Forum",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Color(0xFF7BA273),
+            ),
+          ),
+        ),
+        centerTitle: true,
+      ),
         body: Column(
           children: [
-            //Header Bar
-            Container(
-              color: const Color(0xFF8B3A3A), // deep red background
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Center(
-                child: Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F6E3), // cream/white pill
-                    borderRadius: BorderRadius.circular(40),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      "Forum",
-                      style: TextStyle(
-                        color: Color(0xFF7BA273),
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-
           Expanded(
             child: isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -194,17 +191,6 @@ class _ForumListPageState extends State<ForumListPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6),
             child: Row(
               children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey.shade400,
-                    ),
-                    child: const Text('Back'),
-                  ),
-                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: ElevatedButton(

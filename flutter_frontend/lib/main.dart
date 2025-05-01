@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_frontend/create_job_page.dart';
 import 'package:google_fonts/google_fonts.dart'; //fonts
 import 'login_page.dart';
 import 'register_page.dart';
@@ -9,6 +10,10 @@ import 'customize_profile_page.dart';
 import 'interest_selection_page.dart';
 import 'forum_list_page.dart';
 import 'create_forum_page.dart';
+import 'company_dashboard_page.dart';
+import 'job_board_user_page.dart';
+import 'view_job_details_page.dart';
+import 'create_job_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,6 +42,10 @@ class MyApp extends StatelessWidget {
         '/select_interests': (context) => const InterestSelectionPage(),
         '/forum_list': (context) => const ForumListPage(),
         '/create_forum': (context) => const CreateForumPage(),
+        '/company_dashboard': (context) => const CompanyDashboardPage(),
+        '/job_board_user_page': (context) => const JobBoardUserPage(),
+        '/job_details': (context) => const ViewJobDetailsPage(),
+        '/create_job_posting': (context) => const CreateJobPage(),
       },
     );
   }
