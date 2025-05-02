@@ -735,7 +735,7 @@ async def recommend_job(job: RecommendedJob, Authorize: AuthJWT = Depends(requir
         logger.error(f"Error processing job recommendations for user {other_username}: {e}")
         raise HTTPException(status_code=500, detail="Error processing job recommendations")
 
-# GET for showing jobs
+# GET for showing jobs -- workers
 @app.get("/job_postings")
 async def get_job_listings(Authorize: AuthJWT = Depends(require_worker)):
 
@@ -810,3 +810,43 @@ async def get_job_listings(Authorize: AuthJWT = Depends(require_worker)):
     except Exception as e:
         logger.error(f"Error fetching recommended jobs for {username}: {e}")
         raise HTTPException(status_code=500, detail="Error fetching recommended jobs")
+
+# GET for showing jobs -- organizations
+@app.get("/company_job_postings")
+async def get_job_listings(Authorize: AuthJWT = Depends(require_organization)):
+
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Get all job posting info from ids
+        cur.execute("""
+                    SELECT title, description, location, salary, company_website_link
+                    FROM job_postings
+                    WHERE username = %s
+                """, (username,))
+        job_postings = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        job_postings_dicts = [dict(zip(columns, row)) for row in job_postings]
+
+        cur.close()
+        conn.close()
+
+        return {"job_postings": job_postings_dicts}
+
+    except Exception as e:
+        logger.error(f"Error fetching job postings for {username}: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching job postings")
+
+# GET for getting user type
+@app.get("/user_type")
+async def get_user_type(Authorize: AuthJWT = Depends()):
+
+    Authorize.jwt_required()
+    user_type = Authorize.get_raw_jwt().get("user_type")
+
+    return {"user_type": user_type}
