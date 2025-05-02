@@ -74,6 +74,10 @@ class JobPosting(BaseModel):
     salary: Optional[int] = None
     company_website_link: Optional[str] = None
 
+class RecommendedJob(BaseModel):
+    username: str
+    job_id: int
+
 def require_worker(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     user_type = Authorize.get_raw_jwt().get("user_type")
@@ -635,14 +639,10 @@ async def get_matches(Authorize: AuthJWT = Depends(require_worker)):
 
 # POST for job postings
 @app.post("/create_job_posting")
-async def create_job_posting(post: JobPosting, Authorize: AuthJWT = Depends()):
+async def create_job_posting(post: JobPosting, Authorize: AuthJWT = Depends(require_organization)):
 
     Authorize.jwt_required()
     username = Authorize.get_jwt_subject()
-    user_type = Authorize.get_raw_jwt().get("user_type")
-
-    if (user_type != "official"):
-        raise HTTPException(status_code=403, detail="Forbidden")
 
     try:
         # Connect to the database
@@ -665,50 +665,148 @@ async def create_job_posting(post: JobPosting, Authorize: AuthJWT = Depends()):
         logger.error(f"Error creating job posting for organization {username}: {e}")
         raise HTTPException(status_code=500, detail="Could not create job posting")
 
-# GET for job postings
+
+# POST for job recommendations
+@app.post("/recommend_job")
+async def recommend_job(job: RecommendedJob, Authorize: AuthJWT = Depends(require_worker)):
+
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+    other_username = job.username
+    job_id = job.job_id
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Check if other_username is a connection of the authenticated user
+        # Makes sure you can't recommend jobs to random users
+        cur.execute("""
+                    SELECT 
+                        CASE 
+                            WHEN user1_username = %s THEN user2_username
+                            ELSE user1_username
+                        END AS connection_username
+                    FROM connections
+                    WHERE user1_username = %s OR user2_username = %s
+                """, (username, username, username))
+        connections = cur.fetchall()
+        connection_usernames = [connection[0] for connection in connections]
+
+        if other_username not in connection_usernames:
+            # If other_username is not in the list of connections, raise an error
+            raise HTTPException(status_code=400, detail="You are not connected with this user")
+
+        cur.execute("SELECT * FROM recommended_jobs WHERE username = %s", [other_username])
+        existing_job_recs = cur.fetchone()
+
+        if existing_job_recs:
+            # User has recommended jobs, add to i
+            cur.execute(
+                "UPDATE recommended_jobs SET job_ids = array_append(job_ids, %s) WHERE username = %s",
+                [job_id, other_username]
+            )
+
+            message = "Job recommendation updated successfully"
+            logger.info(f"Job recommendation updated for user: {other_username}")
+
+        else:
+            # No existing job recommendations, create a new one
+            insert_fields = ["username", "job_ids"]
+            placeholders = ", ".join(["%s"] * len(insert_fields))
+            insert_values = [other_username, [job_id]]  # Wrap job_id in a list to create an array
+
+            cur.execute(
+                f"INSERT INTO recommended_jobs ({', '.join(insert_fields)}) VALUES ({placeholders})",
+                insert_values
+            )
+
+            message = "Job recommendations created successfully"
+            logger.info(f"Job recommendations created for user: {other_username}")
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {"message": message}
+
+    except Exception as e:
+        logger.error(f"Error processing job recommendations for user {other_username}: {e}")
+        raise HTTPException(status_code=500, detail="Error processing job recommendations")
+
+# GET for showing jobs
 @app.get("/job_postings")
-async def get_job_postings(Authorize: AuthJWT = Depends(require_worker)):
+async def get_job_listings(Authorize: AuthJWT = Depends(require_worker)):
 
     Authorize.jwt_required()
     username = Authorize.get_jwt_subject()
 
     try:
+        # Connect to the database
         conn = get_db_connection()
         cur = conn.cursor()
 
-        cur.execute("""
-                    SELECT location
-                    FROM match_profile
-                    WHERE username = %s
-                """, (username,))
+        # Get all the jobs there were already recommended by other users to the user
+        cur.execute("SELECT job_ids FROM recommended_jobs WHERE username = %s", [username])
+        existing_job_recs = cur.fetchone()
 
-        worker_location = cur.fetchone()
-
-        if not worker_location:
-            raise HTTPException(status_code=404, detail="Worker's location not found")
-
-        worker_location = worker_location[0].strip()
-
-        # prioritize location
-        cur.execute("""
-            SELECT *
-            FROM job_postings
-            WHERE location = %s
-        """, (worker_location,))
-        rows = cur.fetchall()
-
-        if rows:
-            logger.info(f"Job postings retrieved: {len(rows)} postings found.")
+        # Make the list empty if no recs -- we will fill this
+        if existing_job_recs is None:
+            # Create a new empty recommendation entry
+            cur.execute("""
+                        INSERT INTO recommended_jobs (username, job_ids)
+                        VALUES (%s, %s)
+                    """, (username, []))
+            conn.commit()
+            current_job_ids = []
         else:
-            logger.info("No job postings found for the worker's location.")
+            current_job_ids = existing_job_recs[0] or []
 
-        col_names = [desc[0] for desc in cur.description]
-        postings = [dict(zip(col_names, row)) for row in rows]
+        job_ids = set(current_job_ids) # sets auto remove duplicate -- could be annoying to the user
+
+        if len(current_job_ids) < 10:
+            # Check how many more jobs to recommend are needed
+            required_jobs = 10 - len(current_job_ids)
+
+            cur.execute("""
+                            SELECT id
+                            FROM job_postings
+                            WHERE location = (SELECT location FROM match_profile WHERE username = %s)
+                            AND NOT (id = ANY(%s))
+                            LIMIT %s
+                        """, (username, list(job_ids), required_jobs))
+
+            additional_jobs = cur.fetchall()
+
+            # Add new jobs to the set
+            new_job_ids = [job[0] for job in additional_jobs]
+            job_ids.update(new_job_ids)
+
+            # Save updated job_ids back to the table
+            cur.execute("""
+                            UPDATE recommended_jobs
+                            SET job_ids = %s
+                            WHERE username = %s
+                        """, (list(job_ids), username))
+            conn.commit()
+
+        # Get all job posting info from ids
+        cur.execute("""
+            SELECT title, description, location, salary, company_website_link
+            FROM job_postings
+            WHERE id = ANY(%s)
+        """, (list(job_ids),))
+        job_postings = cur.fetchall()
+
+        columns = [desc[0] for desc in cur.description]
+        job_postings_dicts = [dict(zip(columns, row)) for row in job_postings]
 
         cur.close()
         conn.close()
 
-        return JSONResponse(content=postings, status_code=200)
+        return {"job_postings": job_postings_dicts}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Could not retrieve job postings")
+        logger.error(f"Error fetching recommended jobs for {username}: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching recommended jobs")
