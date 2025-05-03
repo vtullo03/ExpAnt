@@ -110,6 +110,14 @@ class _HomePageState extends State<HomePage> {
                     child: const Text('Open Messages', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
 
+                  // Matches today swipe screen
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/profile_swipe');
+                    },
+                    style: _buttonStyle(),
+                    child: const Text('View profiles', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
                 ],
               ),
       ),

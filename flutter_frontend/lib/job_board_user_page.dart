@@ -76,29 +76,17 @@ Widget build(BuildContext context) {
   return Scaffold(
     backgroundColor: const Color(0xFFF8F6E3),
     appBar: AppBar(
-        backgroundColor: const Color(0xFF8B3A3A),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context); //Goes back to home
-          },
-        ),
-        title: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8F6E3),
-            borderRadius: BorderRadius.circular(40),
-          ),
-          child: const Text(
-            "Job Board",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: Color(0xFF7BA273),
-            ),
-          ),
-        ),
+        backgroundColor: const Color(0xFFF4F1DE),
+        elevation: 0,
         centerTitle: true,
+        title: const Text(
+          "Job Board",
+          style: TextStyle(color: Color(0xFF618B4A), fontWeight: FontWeight.bold),
+        ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(2),
+          child: Divider(thickness: 2, color: Color(0xFF618B4A)),
+        ),
       ),
     body: Column(
       children: [

@@ -123,13 +123,17 @@ class _ViewJobDetailsPageState extends State<ViewJobDetailsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F6E3),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF8B3A3A),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text("Job Details", style: TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFFF4F1DE),
+        elevation: 0,
         centerTitle: true,
+        title: const Text(
+          "Job Details",
+          style: TextStyle(color: Color(0xFF618B4A), fontWeight: FontWeight.bold),
+        ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(2),
+          child: Divider(thickness: 2, color: Color(0xFF618B4A)),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

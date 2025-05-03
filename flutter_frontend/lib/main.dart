@@ -16,6 +16,7 @@ import 'job_board_user_page.dart';
 import 'view_job_details_page.dart';
 import 'message_screen.dart';
 import 'chat_screen.dart';
+import 'profile_swipe_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -53,6 +54,7 @@ class MyApp extends StatelessWidget {
           final name = ModalRoute.of(context)!.settings.arguments as String;
           return ChatScreen(name: name);
           },
+        '/profile_swipe' : (context) => const ProfileSwipeScreen(),
 
       },
     );

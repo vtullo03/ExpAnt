@@ -47,6 +47,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       final List<Map<String, dynamic>> parsedComments =
           List<Map<String, dynamic>>.from(forumData['comments'] ?? []);
 
+      if (!mounted) return;
       setState(() {
         forum = {
           'id': widget.forumId,
@@ -55,7 +56,10 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         comments = parsedComments;
         isLoading = false;
       });
+
     } else {
+      if (!mounted) return;
+      setState(() => isLoading = false);
       print("Failed to load forum.");
       setState(() => isLoading = false);
     }
@@ -89,25 +93,25 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F6E3),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF4F1DE),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          "Post details",
+          style: TextStyle(color: Color(0xFF618B4A), fontWeight: FontWeight.bold),
+        ),
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(2),
+          child: Divider(thickness: 2, color: Color(0xFF618B4A)),
+        ),
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : forum == null
               ? const Center(child: Text("Forum not found."))
               : Column(
                   children: [
-                    //Header Bar
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      color: const Color(0xFF8B3A3A),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 35,),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
 
                     //Main content
                     Expanded(
