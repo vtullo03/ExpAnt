@@ -552,18 +552,32 @@ async def get_feed(Authorize: AuthJWT = Depends(require_worker)):
             WHERE user1_username = %s OR user2_username = %s
         """, (username, username, username))
 
+        # Extract connection usernames and include the user's own username
         rows = cur.fetchall()
+        usernames = [row[0] for row in rows]
+        usernames.append(username)  # Include user's own posts
+
         posts = []
 
         # For each user get forum posts
-        for user in rows:
+        for user in usernames:
 
             cur.execute("""
-                        SELECT id FROM forums WHERE username = %s
-                    """, (user,))
+                SELECT id, username, title, content, created_at
+                FROM forums
+                WHERE username = %s
+                ORDER BY created_at DESC
+            """, (user,))
 
-            forum_ids = [row[0] for row in cur.fetchall()]
-            posts.append(forum_ids)
+            user_posts = cur.fetchall()
+            for post in user_posts:
+                posts.append({
+                    "id": post[0],
+                    "username": post[1],
+                    "title": post[2],
+                    "content": post[3],
+                    "created_at": post[4].isoformat()  # Ensure datetime is JSON serializable
+                })
 
         cur.close()
         conn.close()
