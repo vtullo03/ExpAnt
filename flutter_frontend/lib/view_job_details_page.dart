@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class ViewJobDetailsPage extends StatefulWidget {
   const ViewJobDetailsPage({super.key});
@@ -10,8 +13,75 @@ class ViewJobDetailsPage extends StatefulWidget {
 }
 
 class _ViewJobDetailsPageState extends State<ViewJobDetailsPage> {
-  String? selectedConnection; // Placeholder for connection selection
-  final List<String> mockConnections = ['Alice', 'Bob', 'Charlie']; // Replace with real connections later
+  String? selectedConnection;
+  List<String> connections = [];
+  bool isLoadingConnections = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchConnections();
+  }
+
+  Future<void> fetchConnections() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('authToken');
+    if (token == null) return;
+
+    try {
+      final response = await http.get(
+        Uri.parse('https://expant-backend.onrender.com/connections'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = List<String>.from(jsonDecode(response.body));
+        data.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase())); // Sort alphabetically
+        setState(() {
+          connections = data;
+          isLoadingConnections = false;
+        });
+      } else {
+        print('Failed to fetch connections: ${response.body}');
+        setState(() => isLoadingConnections = false);
+      }
+    } catch (e) {
+      print('Error fetching connections: $e');
+      setState(() => isLoadingConnections = false);
+    }
+  }
+
+  Future<void> recommendJob(String username, int jobId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('authToken');
+    if (token == null) return;
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://expant-backend.onrender.com/recommend_job'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'username': username,
+          'job_id': jobId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Shared with $username!")),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to share: ${response.body}")),
+        );
+      }
+    } catch (e) {
+      print("Error sharing job: $e");
+    }
+  }
 
   String _formatDate(String? raw) {
     if (raw == null || raw.trim().isEmpty) return '[date posted]';
@@ -26,8 +96,7 @@ class _ViewJobDetailsPageState extends State<ViewJobDetailsPage> {
   String _formatSalary(dynamic salary) {
     try {
       final num value = num.parse(salary.toString());
-      final formatter = NumberFormat.currency(locale: 'en_US', symbol: '\$', decimalDigits: 0);
-      return formatter.format(value);
+      return NumberFormat.currency(locale: 'en_US', symbol: '\$', decimalDigits: 0).format(value);
     } catch (_) {
       return '[salary]';
     }
@@ -47,6 +116,9 @@ class _ViewJobDetailsPageState extends State<ViewJobDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final job = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final jobId = job['id'] ?? job['job_id']; 
+
+    print("Job ID: $jobId | Selected connection: $selectedConnection");
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F6E3),
@@ -100,8 +172,7 @@ class _ViewJobDetailsPageState extends State<ViewJobDetailsPage> {
             // Description
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text("Job Description",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text("Job Description", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
             Container(
@@ -137,41 +208,40 @@ class _ViewJobDetailsPageState extends State<ViewJobDetailsPage> {
                   style: TextStyle(fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedConnection,
-                    hint: const Text("[dropdown]"),
-                    items: mockConnections.map((conn) {
-                      return DropdownMenuItem(
-                        value: conn,
-                        child: Text(conn),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedConnection = value;
-                      });
-                    },
+
+            isLoadingConnections
+                ? const CircularProgressIndicator()
+                : Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: selectedConnection,
+                          hint: const Text("[dropdown]"),
+                          items: connections.map((conn) {
+                            return DropdownMenuItem(
+                              value: conn,
+                              child: Text(conn),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedConnection = value;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: (selectedConnection != null && jobId != null)
+                            ? () => recommendJob(selectedConnection!, jobId)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF7BA273),
+                        ),
+                        child: const Text("Share", style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: selectedConnection == null
-                      ? null
-                      : () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Shared with $selectedConnection!")),
-                          );
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7BA273),
-                  ),
-                  child: const Text("Share", style: TextStyle(color: Colors.white)),
-                ),
-              ],
-            )
           ],
         ),
       ),

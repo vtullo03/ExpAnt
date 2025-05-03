@@ -43,8 +43,7 @@ class _JobBoardUserPageState extends State<JobBoardUserPage> {
       final data = jsonDecode(response.body);
       print("DEBUG job_postings response: $data");
 
-      final jobs = List<Map<String, dynamic>>.from(data);
-
+      final jobs = List<Map<String, dynamic>>.from(data['job_postings']);
 
       setState(() {
         jobPostings = jobs;
@@ -53,13 +52,12 @@ class _JobBoardUserPageState extends State<JobBoardUserPage> {
     } else {
       print('Server responded with status code: ${response.statusCode}');
       print('Response body: ${response.body}');
-      //setState(() => isLoading = false);
     }
   } catch (e) {
     print('An error occurred: $e');
-   // setState(() => isLoading = false);
   }
 }
+
 
 
   String formatDate(dynamic raw) {

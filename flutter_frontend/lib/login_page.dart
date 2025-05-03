@@ -35,15 +35,39 @@ class _LoginPageState extends State<LoginPage> {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('authToken', token);
+    await prefs.setString('username', _usernameController.text);
 
-    if (mounted) {
-      setState(() => _errorMessage = '');
-      Navigator.pushReplacementNamed(context, '/home');
+    //Immediately get user type after login
+    final typeResponse = await http.get(
+      Uri.parse('https://expant-backend.onrender.com/user_type'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (typeResponse.statusCode == 200) {
+      final typeData = jsonDecode(typeResponse.body);
+      final userType = typeData['user_type'];
+      print('User type: $userType');
+
+      if (mounted) {
+        setState(() => _errorMessage = '');
+
+        if (userType == 'official') {
+          Navigator.pushReplacementNamed(context, '/company_dashboard');
+        } else {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      }
+    } else {
+      print('Failed to get user type: ${typeResponse.body}');
+      setState(() => _errorMessage = 'Login succeeded, but user type check failed.');
     }
   } else {
     setState(() => _errorMessage = 'Invalid login combination');
   }
 }
+
 
 
   @override

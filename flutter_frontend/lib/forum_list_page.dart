@@ -57,29 +57,25 @@ class _ForumListPageState extends State<ForumListPage> {
 
   if (response.statusCode == 200) {
     try {
-      final nestedIds = jsonDecode(response.body) as List;
-      //Flatten the nested list of forum IDs
-      final ids = (nestedIds)
-          .expand((item) => item is List ? item : [item])
-          .cast<int>()
-          .toList();
-
-      print('DEBUG flattened ids = $ids');
+      final data = jsonDecode(response.body) as List;
 
       final List<Map<String, dynamic>> loadedForums = [];
 
-      for (final id in ids) {
-        final forumResponse = await http.get(
-          Uri.parse('https://expant-backend.onrender.com/forums/$id'),
+      for (final forumSummary in data) {
+        final forumId = forumSummary['id'];
+        final fullForumResponse = await http.get(
+          Uri.parse('https://expant-backend.onrender.com/forums/$forumId'),
           headers: {
             'Authorization': 'Bearer $token',
           },
         );
 
-        if (forumResponse.statusCode == 200) {
-          final forumData = jsonDecode(forumResponse.body);
-          forumData['id'] = id;
-          loadedForums.add(forumData);
+        if (fullForumResponse.statusCode == 200) {
+          final fullForum = jsonDecode(fullForumResponse.body);
+          fullForum['id'] = forumId; // Ensure ID is included
+          loadedForums.add(fullForum);
+        } else {
+          print('Failed to fetch forum $forumId: ${fullForumResponse.body}');
         }
       }
 
@@ -89,12 +85,14 @@ class _ForumListPageState extends State<ForumListPage> {
         isLoading = false;
       });
     } catch (e) {
-      print('DEBUG error during JSON decoding or flattening: $e');
+      print('DEBUG error during JSON decoding: $e');
     }
   } else {
     print('Failed to load forums: ${response.body}');
   }
 }
+
+
 
 
     @override
@@ -162,7 +160,7 @@ class _ForumListPageState extends State<ForumListPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "${forum['username']} • ${formatTimestamp(forum['created_time'])}",
+                                      "${forum['username'] ?? '[unknown]'} • ${formatTimestamp(forum['created_'] ?? '')}",
                                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                                     ),
                                   ],
@@ -216,13 +214,15 @@ class _ForumListPageState extends State<ForumListPage> {
     );
   }
 
-  String formatTimestamp(String raw) {
+ String formatTimestamp(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return '[unknown time]';
   try {
-    final dt = DateTime.parse(raw).toUtc(); //Ensure UTC for consistency
+    final dt = DateTime.parse(raw).toUtc(); // Ensure UTC for consistency
     return '${DateFormat('EEE, dd MMM yyyy HH:mm:ss').format(dt)} GMT';
   } catch (e) {
-    return raw;
+    return '[invalid time]';
   }
 }
+
 }
 

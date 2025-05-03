@@ -49,6 +49,8 @@ class _RegisterPageState extends State<RegisterPage> {
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('authToken', token);
+        await prefs.setString('username', _usernameController.text);
+
 
         Navigator.pushReplacementNamed(context, '/account_setup');
       }

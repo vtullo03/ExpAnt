@@ -22,39 +22,38 @@ class _CompanyDashboardPageState extends State<CompanyDashboardPage> {
   }
 
   Future<void> fetchJobPostings() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('authToken');
-    if (token == null) {
-      print('No token found');
-      setState(() => isLoading = false);
-      return;
-    }
-
-    try {
-      final response = await http.get(
-        Uri.parse('https://expant-backend.onrender.com/job_postings'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final jobs = List<Map<String, dynamic>>.from(data);
-        setState(() {
-          jobPostings = jobs;
-          isLoading = false;
-        });
-      } else {
-        print('Failed to fetch jobs: ${response.statusCode}');
-      //  setState(() => isLoading = false);
-      }
-    } catch (e) {
-      print('Error fetching jobs: $e');
-      //setState(() => isLoading = false);
-    }
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('authToken');
+  if (token == null) {
+    print('No token found');
+    setState(() => isLoading = false);
+    return;
   }
+
+  try {
+    final response = await http.get(
+      Uri.parse('https://expant-backend.onrender.com/messages/company_job_postings'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final jobs = List<Map<String, dynamic>>.from(data['job_postings']); //extract properly
+      setState(() {
+        jobPostings = jobs;
+        isLoading = false;
+      });
+    } else {
+      print('Failed to fetch jobs: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error fetching jobs: $e');
+  }
+}
+
 
   String formatDate(String? raw) {
     if (raw == null || raw.trim().isEmpty) return '[date posted]';
@@ -137,7 +136,7 @@ class _CompanyDashboardPageState extends State<CompanyDashboardPage> {
                               Text(job['location'] ?? '[location]'),
                               const SizedBox(height: 8),
                               Text(formatSalary(job['salary'])),
-                              Text(formatDate(job['created_time'])),
+                              //Text(formatDate(job['created_time'])),
                             ],
                           ),
                         ),
