@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:flutter_frontend/message_screen.dart'; // Adjust path if needed
-
+import 'package:flutter_frontend/message_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -44,7 +43,7 @@ class _HomePageState extends State<HomePage> {
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       setState(() {
-        userType = json['user_type']; //should be 'jobforceuser' or 'official'
+        userType = json['user_type'];
         print(userType);
         isLoading = false;
       });
@@ -60,76 +59,130 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFD7D5CA),
+      backgroundColor: const Color(0xFFF8F6E3),
       appBar: AppBar(
-        title: const Text('Home Page'),
+        title: const Text(
+          'Welcome to ExpAnt',
+          style: TextStyle(color: Color(0xFF3B2C2F)),
+        ),
+        centerTitle: true,
         backgroundColor: const Color(0xFF7BA273),
+        elevation: 0,
       ),
-      body: Center(
-        child: isLoading
-            ? const CircularProgressIndicator()
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(height: 10),
                   const Text(
-                    'You are logged in! sample homepage',
-                    style: TextStyle(fontSize: 24),
+                    'Dashboard',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3B2C2F),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Welcome back',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey[700],
+                    ),
                   ),
                   const SizedBox(height: 30),
-
-                  // Forum Button
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/forum_list');
-                    },
-                    style: _buttonStyle(),
-                    child: const Text('View Forum Posts', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Jobforceuser job board
-                  ElevatedButton(
-                    onPressed: userType == 'worker'
-                        ? () => Navigator.pushNamed(context, '/job_board_user_page')
-                        : () => print('Access denied: Only users can view this'),
-                    style: _buttonStyle(disabled: userType != 'worker'),
-                    child: const Text('View Jobs', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Chat Button
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => MessageScreen()),
-                      );
-                    },
-                    style: _buttonStyle(),
-                    child: const Text('Open Messages', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-
-                  // Matches today swipe screen
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/profile_swipe');
-                    },
-                    style: _buttonStyle(),
-                    child: const Text('View profiles', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Expanded(
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      shrinkWrap: true,
+                      children: [
+                        _dashboardCard(
+                          label: 'My Profile',
+                          icon: Icons.person,
+                          onTap: () => Navigator.pushNamed(context, '/profile_page'),
+                        ),
+                        _dashboardCard(
+                          label: 'Forum',
+                          icon: Icons.forum,
+                          onTap: () => Navigator.pushNamed(context, '/forum_list'),
+                        ),
+                        _dashboardCard(
+                          label: 'Jobs',
+                          icon: Icons.work,
+                          onTap: userType == 'worker'
+                              ? () => Navigator.pushNamed(context, '/job_board_user_page')
+                              : () => ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Only workers can view this.')),
+                                  ),
+                        ),
+                        _dashboardCard(
+                          label: 'Messages',
+                          icon: Icons.message,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => MessageScreen()),
+                          ),
+                        ),
+                        _dashboardCard(
+                          label: 'Profiles',
+                          icon: Icons.people,
+                          onTap: () => Navigator.pushNamed(context, '/profile_swipe'),
+                        ),
+                        _dashboardCard(
+                          label: 'Settings',
+                          icon: Icons.settings,
+                          onTap: () => Navigator.pushNamed(context, '/settings'),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-      ),
+            ),
     );
   }
 
-  ButtonStyle _buttonStyle({bool disabled = false}) {
-    return ElevatedButton.styleFrom(
-      backgroundColor: disabled ? Colors.grey.shade400 : const Color(0xFF7BA273),
-      foregroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  Widget _dashboardCard({
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF7BA273),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 40, color: Colors.white),
+            const SizedBox(height: 16),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

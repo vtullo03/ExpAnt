@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'chat_screen.dart';
 import 'message_screen.dart';
 
 class ProfileSwipeScreen extends StatefulWidget {
@@ -52,7 +51,20 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
     });
   }
 
-  void swipeRight() {
+  void swipeRight() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('authToken');
+    final profile = profiles[currentIndex];
+
+    await http.post(
+      Uri.parse('https://expant-backend.onrender.com/like_profile'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'liked_user': profile['username']}),
+    );
+
     setState(() {
       if (currentIndex < profiles.length - 1) currentIndex++;
     });
@@ -71,11 +83,11 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
       return Scaffold(
         backgroundColor: const Color(0xFFF4F1DE),
         body: const Center(child: Text("No more profiles 🫶")),
+        bottomNavigationBar: _buildBottomNavBar(context),
       );
     }
 
     final profile = profiles[currentIndex];
-    print("Color used for name: ${profile["font_color"]}");
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F1DE),
@@ -92,24 +104,19 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
           child: Divider(thickness: 2, color: Color(0xFF618B4A)),
         ),
       ),
-      body: Center(
-        child: Dismissible(
-          key: UniqueKey(),
-          direction: DismissDirection.horizontal,
-          onDismissed: (direction) {
-            direction == DismissDirection.startToEnd ? swipeRight() : swipeLeft();
-          },
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Container(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
               width: 340,
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Business Card
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -119,42 +126,28 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
                     ),
                     child: Column(
                       children: [
-                        Text(profile["university"] ?? "", style: const TextStyle(fontSize: 14)),
-                        const SizedBox(height: 4),
-                        Text(profile["company"] ?? "", style: const TextStyle(fontSize: 14)),
-                        const SizedBox(height: 12),
+                        Text(profile["university"] ?? ""),
+                        Text(profile["company"] ?? ""),
+                        const SizedBox(height: 8),
                         Text(
                           "${profile["first_name"] ?? ""} ${profile["last_name"] ?? ""}",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            //color: Color(profile["font_color"] ?? 0xFF000000),
-                            color: Color(0xFF000000 | ((profile["font_color"] ?? 0x000000) & 0xFFFFFF)),
-
-                          ),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 4),
-                        Text(profile["pronouns"] ?? "", style: const TextStyle(fontSize: 14, color: Colors.black54)),
-                        const SizedBox(height: 12),
-                        Text(profile["bio"] ?? "", textAlign: TextAlign.center, style: const TextStyle(fontSize: 13)),
-                        
+                        Text(profile["pronouns"] ?? "", style: const TextStyle(color: Colors.black54)),
+                        const SizedBox(height: 8),
+                        Text(profile["bio"] ?? "", textAlign: TextAlign.center),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Placeholder image
                   Container(
                     height: 230,
-                    width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.grey[400],
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Details
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -167,24 +160,18 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Located: ${profile["location"] ?? ""}", style: const TextStyle(fontSize: 14)),
+                        Text("Located: ${profile["location"] ?? ""}"),
+                        Text("Field: ${profile["field"] ?? ""}"),
+                        Text("Job Status: ${profile["job_status"] ?? ""}"),
                         const SizedBox(height: 8),
-                        Text("Field: ${profile["field"] ?? ""}", style: const TextStyle(fontSize: 14)),
-                        const SizedBox(height: 8),
-                        Text("Job Status: ${profile["job_status"] ?? ""}", style: const TextStyle(fontSize: 14)),
-                        const SizedBox(height: 12),
-                        const Text("Interests:", style: TextStyle(fontSize: 14)),
-                        const SizedBox(height: 6),
+                        const Text("Interests:"),
                         Wrap(
-                          spacing: 4,
-                          runSpacing: 4,
+                          spacing: 6,
                           children: List<Widget>.from(
                             (profile["interests"] ?? []).map<Widget>(
                               (interest) => Chip(
-                                label: Text(interest, style: const TextStyle(fontSize: 11, color: Color(0xFF3B2C2F))),
+                                label: Text(interest),
                                 backgroundColor: const Color(0xFFF2CC8F),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                             ),
                           ),
@@ -192,15 +179,34 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: swipeLeft,
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                        child: const Text("Skip"),
+                      ),
+                      ElevatedButton(
+                        onPressed: swipeRight,
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                        child: const Text("Like"),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
+      bottomNavigationBar: _buildBottomNavBar(context),
+    );
+  }
 
-      /*
-      bottomNavigationBar: BottomNavigationBar(
+    Widget _buildBottomNavBar(BuildContext context) {
+      return BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: const Color(0xFFF2CC8F),
         selectedItemColor: const Color(0xFF618B4A),
@@ -212,13 +218,11 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
           }
         },
         items: const [
-          BottomNavigationBarItem(icon: ImageIcon(AssetImage('assets/notebook.png')), label: ''),
-          BottomNavigationBarItem(icon: ImageIcon(AssetImage('assets/suitcase.png')), label: ''),
-          BottomNavigationBarItem(icon: ImageIcon(AssetImage('assets/ant.png')), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble), label: ''),
-          BottomNavigationBarItem(icon: ImageIcon(AssetImage('assets/person.png')), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Forum'),
+          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Match'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
         ],
-      ), */
-    );
+      );
+    }
   }
-}

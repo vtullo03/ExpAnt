@@ -17,6 +17,8 @@ import 'view_job_details_page.dart';
 import 'message_screen.dart';
 import 'chat_screen.dart';
 import 'profile_swipe_screen.dart';
+import 'settings.dart';
+import 'profile_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -49,7 +51,9 @@ class MyApp extends StatelessWidget {
         '/job_board_user_page': (context) => const JobBoardUserPage(),
         '/job_details': (context) => const ViewJobDetailsPage(),
         '/create_job_posting': (context) => const CreateJobPage(),
+        '/settings': (context) => const SettingsPage(),
         '/messages' : (context) => const MessageScreen(),
+        '/profile_page': (context) => const ProfilePage(),
         '/chat': (context) {
           final name = ModalRoute.of(context)!.settings.arguments as String;
           return ChatScreen(name: name);
