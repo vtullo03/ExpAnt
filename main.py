@@ -78,6 +78,10 @@ class RecommendedJob(BaseModel):
     username: str
     job_id: int
 
+class Message(BaseModel):
+    username: str
+    message: str
+
 def require_worker(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     user_type = Authorize.get_raw_jwt().get("user_type")
@@ -563,10 +567,10 @@ async def get_feed(Authorize: AuthJWT = Depends(require_worker)):
         for user in usernames:
 
             cur.execute("""
-                SELECT id, username, title, content, created_at
+                SELECT id, username, title, description, created_time, images
                 FROM forums
                 WHERE username = %s
-                ORDER BY created_at DESC
+                ORDER BY created_time DESC
             """, (user,))
 
             user_posts = cur.fetchall()
@@ -576,7 +580,8 @@ async def get_feed(Authorize: AuthJWT = Depends(require_worker)):
                     "username": post[1],
                     "title": post[2],
                     "content": post[3],
-                    "created_at": post[4].isoformat()  # Ensure datetime is JSON serializable
+                    "created_at": post[4].isoformat(),  # Ensure datetime is JSON serializable
+                    "images": post[5]
                 })
 
         cur.close()
@@ -864,3 +869,77 @@ async def get_user_type(Authorize: AuthJWT = Depends()):
     user_type = Authorize.get_raw_jwt().get("user_type")
 
     return {"user_type": user_type}
+
+# POST for message creation
+@app.post("/create_message")
+async def create_message(data: Message, Authorize: AuthJWT = Depends(require_worker)):
+    username = Authorize.get_jwt_subject()
+    receiver_username = data.username
+    message = data.message
+
+    if not receiver_username or not message:
+        raise HTTPException(status_code=400, detail="Please provide both username and message")
+
+    if receiver_username == username:
+        raise HTTPException(status_code=400, detail="Cannot message yourself")
+
+    if message.strip() == "":
+        raise HTTPException(status_code=400, detail="Cannot send blank message")
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO messages (user_1, user_2, messages)
+            VALUES (%s, %s, %s)
+        """, (username, receiver_username, message))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {"message": "Message created!"}
+
+    except Exception as e:
+        print(f"Error sending message from {username} to {receiver_username}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send message")
+
+# GET for messages
+
+@app.get("/messages/{other_username}")
+async def get_messages(other_username: str, Authorize: AuthJWT = Depends(require_worker)):
+
+    Authorize.jwt_required()
+    username = Authorize.get_jwt_subject()
+
+    try:
+        # Connect to the database
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT user_1, user_2, messages, created_at
+            FROM messages
+            WHERE (user_1 = %s AND user_2 = %s)
+               OR (user_1 = %s AND user_2 = %s)
+            ORDER BY created_at ASC
+        """, (username, other_username, other_username, username))
+
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        messages = [dict(zip(columns, row)) for row in rows]
+
+        # Format timestamp as ISO string
+        for msg in messages:
+            msg["created_at"] = msg["created_at"].isoformat()
+
+        cur.close()
+        conn.close()
+
+        return {"messages": messages}
+
+    except Exception as e:
+        logger.error(f"Error retrieving messages between {username} and {other_username}: {e}")
+        raise HTTPException(status_code=500, detail="Could not retrieve messages")
