@@ -15,6 +15,7 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
   final _lastName = TextEditingController();
   final _employment = TextEditingController();
   final _cityState = TextEditingController();
+  final _university = TextEditingController();
 
   String? selectedPronoun;
   String? selectedIndustry;
@@ -58,7 +59,7 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
       'location': '${_cityState.text.trim()}, ${selectedCountry ?? ''}',
       'pronouns': selectedPronoun ?? '',
       'field': selectedIndustry ?? '',
-      'university': selectedEducation ?? '',
+      'university': _university.text.trim(),
       }
     ),
 
@@ -126,11 +127,9 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
               ),
 
               const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                value: selectedEducation,
-                hint: const Text('Highest completed education'),
-                items: educationLevels.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                onChanged: (value) => setState(() => selectedEducation = value),
+              TextField(
+                controller: _university,
+                decoration: const InputDecoration(labelText: 'University'),
               ),
 
               const SizedBox(height: 10),
