@@ -24,6 +24,7 @@ class _CompanyDashboardPageState extends State<CompanyDashboardPage> {
   Future<void> fetchJobPostings() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('authToken');
+  
   print(token);
   if (token == null) {
     print('No token found');
@@ -33,7 +34,7 @@ class _CompanyDashboardPageState extends State<CompanyDashboardPage> {
 
   try {
     final response = await http.get(
-      Uri.parse('https://expant-backend.onrender.com/messages/company_job_postings'),
+      Uri.parse('https://expant-backend.onrender.com/company_job_postings'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -43,6 +44,7 @@ class _CompanyDashboardPageState extends State<CompanyDashboardPage> {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final jobs = List<Map<String, dynamic>>.from(data['job_postings']); //extract properly
+      
       setState(() {
         jobPostings = jobs;
         isLoading = false;

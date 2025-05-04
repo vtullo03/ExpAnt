@@ -123,7 +123,6 @@ class _ForumListPageState extends State<ForumListPage> {
                       itemCount: filteredForums.length,
                       itemBuilder: (context, index) {
                         final forum = filteredForums[index];
-                        print('DEBUG created_at for forum ${forum['id']}: ${forum['created_at']}');
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
