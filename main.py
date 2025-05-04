@@ -812,7 +812,7 @@ async def get_job_listings(Authorize: AuthJWT = Depends(require_worker)):
 
         # Get all job posting info from ids
         cur.execute("""
-            SELECT title, description, location, salary, company_website_link
+            SELECT *
             FROM job_postings
             WHERE id = ANY(%s)
         """, (list(job_ids),))
@@ -844,7 +844,7 @@ async def get_job_listings(Authorize: AuthJWT = Depends(require_organization)):
 
         # Get all job posting info from ids
         cur.execute("""
-                    SELECT title, description, location, salary, company_website_link
+                    SELECT *
                     FROM job_postings
                     WHERE username = %s
                 """, (username,))
