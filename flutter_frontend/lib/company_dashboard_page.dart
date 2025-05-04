@@ -24,6 +24,7 @@ class _CompanyDashboardPageState extends State<CompanyDashboardPage> {
   Future<void> fetchJobPostings() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('authToken');
+  print(token);
   if (token == null) {
     print('No token found');
     setState(() => isLoading = false);
@@ -79,30 +80,29 @@ class _CompanyDashboardPageState extends State<CompanyDashboardPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F6E3),
     appBar: AppBar(
-        backgroundColor: const Color(0xFF8B3A3A),
+        backgroundColor: const Color(0xFFF4F1DE),
+        elevation: 0,
+        centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            Navigator.pop(context); //Goes back to home
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.clear(); // Logs out the user
+            if (context.mounted) {
+              Navigator.pushReplacementNamed(context, '/'); // Go back to login
+            }
           },
         ),
-        title: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8F6E3),
-            borderRadius: BorderRadius.circular(40),
-          ),
-          child: const Text(
-            "Company Dashboard",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: Color(0xFF7BA273),
-            ),
-          ),
+        title: const Text(
+          "Company Dashboard",
+          style: TextStyle(color: Color(0xFF618B4A), fontWeight: FontWeight.bold),
         ),
-        centerTitle: true,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(2),
+          child: Divider(thickness: 2, color: Color(0xFF618B4A)),
+        ),
       ),
+
       body: Column(
         children: [
           const SizedBox(height: 12),

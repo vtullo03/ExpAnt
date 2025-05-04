@@ -46,29 +46,31 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
   }
 
   void swipeLeft() {
-    setState(() {
-      if (currentIndex < profiles.length - 1) currentIndex++;
-    });
-  }
+  setState(() {
+    currentIndex++;
+  });
+}
+
 
   void swipeRight() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('authToken');
-    final profile = profiles[currentIndex];
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('authToken');
+  final profile = profiles[currentIndex];
 
-    await http.post(
-      Uri.parse('https://expant-backend.onrender.com/like_profile'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'liked_user': profile['username']}),
-    );
+  await http.post(
+    Uri.parse('https://expant-backend.onrender.com/like_profile'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({'liked_user': profile['username']}),
+  );
 
-    setState(() {
-      if (currentIndex < profiles.length - 1) currentIndex++;
-    });
-  }
+  setState(() {
+    currentIndex++;
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -186,12 +188,12 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
                       ElevatedButton(
                         onPressed: swipeLeft,
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                        child: const Text("Skip"),
+                        child: const Text("Skip", style: TextStyle(color: Colors.white)),
                       ),
                       ElevatedButton(
                         onPressed: swipeRight,
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                        child: const Text("Like"),
+                        child: const Text("Like", style: TextStyle(color: Colors.white)),
                       ),
                     ],
                   ),
@@ -213,8 +215,21 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
         unselectedItemColor: const Color(0xFF3B2C2F),
         currentIndex: 2,
         onTap: (index) {
+          if (index == 0){
+            Navigator.pushReplacementNamed(context, '/forum_list');
+          }
+
+          if (index == 1){
+            Navigator.pushReplacementNamed(context, '/job_board_user_page');
+          }
+
+          if (index == 2){
+            Navigator.pushReplacementNamed(context, '/profile_swipe');
+          }
+
           if (index == 3) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const MessageScreen()));
+            Navigator.pushReplacementNamed(context, '/messages');
+          
           }
         },
         items: const [

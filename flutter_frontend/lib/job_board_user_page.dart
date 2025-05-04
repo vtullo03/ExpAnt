@@ -146,7 +146,7 @@ Widget build(BuildContext context) {
                         Text(_formatSalary(job['salary'])),
                       ],
                     ),
-                    Text(formatDate(job['created_time'])),
+                  //  Text(formatDate(job['created_time'])),
                     const SizedBox(height: 10),
                     //View details text
                     Align(
@@ -177,6 +177,7 @@ Widget build(BuildContext context) {
         ),
       ],
     ),
+    bottomNavigationBar: _buildBottomNavBar(context),
   );
 }
 
@@ -190,6 +191,37 @@ Widget build(BuildContext context) {
     }
   }
 
+ Widget _buildBottomNavBar(BuildContext context) {
+      return BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: const Color(0xFFF2CC8F),
+        selectedItemColor: const Color(0xFF618B4A),
+        unselectedItemColor: const Color(0xFF3B2C2F),
+        currentIndex: 1,
+        onTap: (index) {
+          if (index == 0){
+            Navigator.pushReplacementNamed(context, '/forum_list');
+          }
 
+          if (index == 1){
+            Navigator.pushReplacementNamed(context, '/job_board_user_page');
+          }
 
-}
+          if (index == 2){
+            Navigator.pushReplacementNamed(context, '/profile_swipe');
+          }
+
+          if (index == 3) {
+            Navigator.pushReplacementNamed(context, '/messages');
+          
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Forum'),
+          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Match'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
+        ],
+      );
+
+ }}

@@ -123,6 +123,8 @@ class _ForumListPageState extends State<ForumListPage> {
                       itemCount: filteredForums.length,
                       itemBuilder: (context, index) {
                         final forum = filteredForums[index];
+                        print('DEBUG created_at for forum ${forum['id']}: ${forum['created_at']}');
+
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -134,7 +136,7 @@ class _ForumListPageState extends State<ForumListPage> {
                                     builder: (_) => ForumDetailPage(forumId: forum['id']),
                                   ),
                                 );
-                              },
+                              }, 
                               child: ListTile(
                                 title: Text(
                                   forum['title'] ?? '[title]',
@@ -148,7 +150,7 @@ class _ForumListPageState extends State<ForumListPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "${forum['username'] ?? '[unknown]'} • ${formatTimestamp(forum['created_'] ?? '')}",
+                                      "${forum['username'] ?? '[unknown]'} • ${formatTimestamp(forum['created_time'] ?? '')}",
                                       style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                                     ),
                                   ],
@@ -199,18 +201,53 @@ class _ForumListPageState extends State<ForumListPage> {
           ),
         ],
       ),
+      bottomNavigationBar: _buildBottomNavBar(context),
     );
   }
-
- String formatTimestamp(String? raw) {
+String formatTimestamp(String? raw) {
   if (raw == null || raw.trim().isEmpty) return '[unknown time]';
   try {
-    final dt = DateTime.parse(raw).toUtc(); // Ensure UTC for consistency
-    return '${DateFormat('EEE, dd MMM yyyy HH:mm:ss').format(dt)} GMT';
+    final dt = DateTime.parse(raw); // No need to .toUtc() unless required
+    return DateFormat('EEE, dd MMM yyyy HH:mm:ss').format(dt);
   } catch (e) {
+    print('DEBUG timestamp parsing failed for: $raw');
     return '[invalid time]';
   }
 }
+
+Widget _buildBottomNavBar(BuildContext context) {
+      return BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: const Color(0xFFF2CC8F),
+        selectedItemColor: const Color(0xFF618B4A),
+        unselectedItemColor: const Color(0xFF3B2C2F),
+        currentIndex: 0,
+        onTap: (index) {
+          if (index == 0){
+            Navigator.pushReplacementNamed(context, '/forum_list');
+          }
+
+          if (index == 1){
+            Navigator.pushReplacementNamed(context, '/job_board_user_page');
+          }
+
+          if (index == 2){
+            Navigator.pushReplacementNamed(context, '/profile_swipe');
+          }
+
+          if (index == 3) {
+            Navigator.pushReplacementNamed(context, '/messages');
+          
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Forum'),
+          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Match'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
+        ],
+      );
+    }
 
 }
 

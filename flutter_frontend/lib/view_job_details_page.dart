@@ -165,7 +165,7 @@ class _ViewJobDetailsPageState extends State<ViewJobDetailsPage> {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                     const SizedBox(height: 8),
                     Text("Salary: ${_formatSalary(job['salary'])}"),
-                    Text("Posted: ${_formatDate(job['created_time'])}"),
+                   // Text("Posted: ${_formatDate(job['created_time'])}"),
                   ],
                 ),
               ),

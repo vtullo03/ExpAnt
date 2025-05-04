@@ -14,6 +14,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String? userType;
   bool isLoading = true;
+  String? username;
 
   @override
   void initState() {
@@ -45,6 +46,7 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         userType = json['user_type'];
         print(userType);
+        username = prefs.getString('username');
         isLoading = false;
       });
     } else {
@@ -87,7 +89,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Welcome back',
+                    'Welcome, ${username ?? ""}',
                     style: TextStyle(
                       fontSize: 18,
                       color: Colors.grey[700],
@@ -129,7 +131,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         _dashboardCard(
-                          label: 'Profiles',
+                          label: 'Connect',
                           icon: Icons.people,
                           onTap: () => Navigator.pushNamed(context, '/profile_swipe'),
                         ),
