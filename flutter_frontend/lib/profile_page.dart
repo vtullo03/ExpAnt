@@ -36,6 +36,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final username = prefs.getString('username');
 
     if (token == null || username == null) {
+      if (!mounted) return;
       setState(() => isLoading = false);
       return;
     }
@@ -51,6 +52,8 @@ class _ProfilePageState extends State<ProfilePage> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
+      if (!mounted) return;
+
       if (profileRes.statusCode == 200 && forumRes.statusCode == 200) {
         final decodedProfile = jsonDecode(profileRes.body);
         final List<dynamic> allForums = jsonDecode(forumRes.body);
@@ -64,6 +67,9 @@ class _ProfilePageState extends State<ProfilePage> {
               Uri.parse('https://expant-backend.onrender.com/forums/$forumId'),
               headers: {'Authorization': 'Bearer $token'},
             );
+
+            if (!mounted) return;
+
             if (fullForumResponse.statusCode == 200) {
               final fullForum = jsonDecode(fullForumResponse.body);
               fullForum['id'] = forumId;
@@ -72,6 +78,7 @@ class _ProfilePageState extends State<ProfilePage> {
           }
         }
 
+        if (!mounted) return;
         setState(() {
           profileData = decodedProfile;
           forumPosts = myForums;
@@ -79,17 +86,23 @@ class _ProfilePageState extends State<ProfilePage> {
           isLoading = false;
         });
       } else {
-        print('Error fetching profile or forums: ${profileRes.body} | ${forumRes.body}');
+        if (!mounted) return;
         setState(() => isLoading = false);
+        debugPrint(
+            'Error fetching profile or forums: ${profileRes.body} | ${forumRes.body}');
       }
     } catch (e) {
-      print('Exception in fetchProfile: $e');
+      if (!mounted) return;
       setState(() => isLoading = false);
+      debugPrint('Exception in fetchProfile: $e');
     }
   }
 
   Future<void> pickImage(bool isProfile) async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (!mounted) return;
+
     if (pickedFile != null) {
       setState(() {
         if (isProfile) {
@@ -109,7 +122,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     final updatedProfile = {
       "bio": bioController.text,
-      "images": [],
+      "images": [],              // TODO: hook up Cloudinary upload
       "font_color": 0,
       "background_color": 0,
       "font_type": 0,
@@ -130,6 +143,8 @@ class _ProfilePageState extends State<ProfilePage> {
       },
       body: jsonEncode(updatedProfile),
     );
+
+    if (!mounted) return;
 
     if (res.statusCode == 200) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -162,31 +177,57 @@ class _ProfilePageState extends State<ProfilePage> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          // edit / save toggle
           IconButton(
             icon: Icon(isEditing ? Icons.save : Icons.edit),
             onPressed: () {
-              if (isEditing) {
-                saveChanges();
-              }
+              if (isEditing) saveChanges();
               setState(() => isEditing = !isEditing);
             },
           ),
+
+          IconButton(
+            icon: const Icon(Icons.menu), 
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
+            tooltip: 'Settings',
+          ),
         ],
       ),
+
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              height: 150,
-              color: Colors.grey[300],
-              child: const Center(child: Text('Background Placeholder')),
+            GestureDetector(
+              onTap: isEditing ? () => pickImage(false) : null,
+              child: Container(
+                height: 150,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  image: newBackground != null
+                      ? DecorationImage(
+                          image: FileImage(newBackground!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: newBackground == null
+                    ? const Center(child: Text('Background Placeholder'))
+                    : null,
+              ),
             ),
             const SizedBox(height: 16),
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, size: 30, color: Colors.white),
+            GestureDetector(
+              onTap: isEditing ? () => pickImage(true) : null,
+              child: CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.grey[300],
+                backgroundImage:
+                    newProfilePic != null ? FileImage(newProfilePic!) : null,
+                child: newProfilePic == null
+                    ? const Icon(Icons.person, size: 30, color: Colors.white)
+                    : null,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
@@ -199,7 +240,8 @@ class _ProfilePageState extends State<ProfilePage> {
               child: isEditing
                   ? TextField(
                       controller: bioController,
-                      decoration: const InputDecoration(labelText: 'Edit your bio'),
+                      decoration:
+                          const InputDecoration(labelText: 'Edit your bio'),
                     )
                   : Text(
                       bioController.text,
@@ -212,19 +254,62 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Text('My Forum Posts',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
-            ...forumPosts.map((post) => ListTile(
-                  title: Text(post['title'] ?? 'No title'),
-                  subtitle: Text(post['description'] ?? 'No content', maxLines: 2, overflow: TextOverflow.ellipsis),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ForumDetailPage(forumId: post['id']),
-                    ),
+            ...forumPosts.map(
+              (post) => ListTile(
+                title: Text(post['title'] ?? 'No title'),
+                subtitle: Text(
+                  post['description'] ?? 'No content',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ForumDetailPage(forumId: post['id']),
                   ),
-                ))
+                ),
+              ),
+            ),
           ],
         ),
       ),
+      bottomNavigationBar: _buildBottomNavBar(context),
     );
+    
   }
+  Widget _buildBottomNavBar(BuildContext context) {
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: const Color(0xFFF2CC8F),
+      selectedItemColor: const Color(0xFF618B4A),
+      unselectedItemColor: const Color(0xFF3B2C2F),
+      currentIndex: 4,
+      onTap: (index) {
+        switch (index) {
+          case 0:
+            Navigator.pushReplacementNamed(context, '/forum_list');
+            break;
+          case 1:
+            Navigator.pushReplacementNamed(context, '/job_board_user_page');
+            break;
+          case 2:
+            Navigator.pushReplacementNamed(context, '/profile_swipe');
+            break;
+          case 3:
+            Navigator.pushReplacementNamed(context, '/messages');
+            break;
+          case 4:
+            Navigator.pushReplacementNamed(context, '/profile_page');
+            break;
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Forum'),
+        BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
+        BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Match'),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
+      ],
+    );
+}
 }

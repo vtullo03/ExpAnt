@@ -24,9 +24,11 @@ class _JobBoardUserPageState extends State<JobBoardUserPage> {
   Future<void> fetchJobPostings() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('authToken');
+
   if (token == null) {
+    if (!mounted) return;        
+    setState(() => isLoading = false);
     print('No token found');
-    setState(() => isLoading = false); 
     return;
   }
 
@@ -39,24 +41,29 @@ class _JobBoardUserPageState extends State<JobBoardUserPage> {
       },
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      print("DEBUG job_postings response: $data");
+   
+    if (!mounted) return;          
 
-      final jobs = List<Map<String, dynamic>>.from(data['job_postings']);
+    if (response.statusCode == 200) {
+      final data  = jsonDecode(response.body);
+      final jobs  = List<Map<String, dynamic>>.from(data['job_postings']);
 
       setState(() {
         jobPostings = jobs;
-        isLoading = false;
+        isLoading   = false;
       });
     } else {
       print('Server responded with status code: ${response.statusCode}');
       print('Response body: ${response.body}');
+      setState(() => isLoading = false);  
     }
   } catch (e) {
     print('An error occurred: $e');
+    if (!mounted) return;          
+    setState(() => isLoading = false);
   }
 }
+
 
 
 
@@ -79,6 +86,7 @@ Widget build(BuildContext context) {
         backgroundColor: const Color(0xFFF4F1DE),
         elevation: 0,
         centerTitle: true,
+        automaticallyImplyLeading: false,
         title: const Text(
           "Job Board",
           style: TextStyle(color: Color(0xFF618B4A), fontWeight: FontWeight.bold),
@@ -192,36 +200,38 @@ Widget build(BuildContext context) {
   }
 
  Widget _buildBottomNavBar(BuildContext context) {
-      return BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFFF2CC8F),
-        selectedItemColor: const Color(0xFF618B4A),
-        unselectedItemColor: const Color(0xFF3B2C2F),
-        currentIndex: 1,
-        onTap: (index) {
-          if (index == 0){
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: const Color(0xFFF2CC8F),
+      selectedItemColor: const Color(0xFF618B4A),
+      unselectedItemColor: const Color(0xFF3B2C2F),
+      currentIndex: 1,
+      onTap: (index) {
+        switch (index) {
+          case 0:
             Navigator.pushReplacementNamed(context, '/forum_list');
-          }
-
-          if (index == 1){
+            break;
+          case 1:
             Navigator.pushReplacementNamed(context, '/job_board_user_page');
-          }
-
-          if (index == 2){
+            break;
+          case 2:
             Navigator.pushReplacementNamed(context, '/profile_swipe');
-          }
-
-          if (index == 3) {
+            break;
+          case 3:
             Navigator.pushReplacementNamed(context, '/messages');
-          
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Forum'),
-          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Match'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
-        ],
-      );
+            break;
+          case 4:
+            Navigator.pushReplacementNamed(context, '/profile_page');
+            break;
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Forum'),
+        BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
+        BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Match'),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
+      ],
+    );
 
  }}

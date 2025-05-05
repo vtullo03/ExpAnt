@@ -20,15 +20,13 @@ class _MessageScreenState extends State<MessageScreen> {
     fetchConnections();
   }
 
-  Future<void> fetchConnections() async {
+Future<void> fetchConnections() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('authToken');
 
   if (token == null) {
-    print('No token found');
-    setState(() {
-      isLoading = false;
-    });
+    if (!mounted) return;
+    setState(() => isLoading = false);
     return;
   }
 
@@ -38,27 +36,24 @@ class _MessageScreenState extends State<MessageScreen> {
       headers: {'Authorization': 'Bearer $token'},
     );
 
+    if (!mounted) return;
+
     if (response.statusCode == 200) {
       final data = List<String>.from(jsonDecode(response.body));
-      data.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase())); // Alphabetical sort
-
+      data.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
       setState(() {
         connections = data;
         isLoading = false;
       });
     } else {
-      print('Failed to fetch connections: ${response.body}');
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
     }
-  } catch (e) {
-    print('Error fetching connections: $e');
-    setState(() {
-      isLoading = false;
-    });
+  } catch (_) {
+    if (!mounted) return;
+    setState(() => isLoading = false);
   }
 }
+
 
 
   @override
@@ -69,6 +64,7 @@ class _MessageScreenState extends State<MessageScreen> {
         backgroundColor: const Color(0xFFF4F1DE),
         elevation: 0,
         centerTitle: true,
+        automaticallyImplyLeading: false,
         title: const Text(
           'messages',
           style: TextStyle(
@@ -111,35 +107,38 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
    Widget _buildBottomNavBar(BuildContext context) {
-      return BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFFF2CC8F),
-        selectedItemColor: const Color(0xFF618B4A),
-        unselectedItemColor: const Color(0xFF3B2C2F),
-        currentIndex: 3,
-        onTap: (index) {
-          if (index == 0){
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: const Color(0xFFF2CC8F),
+      selectedItemColor: const Color(0xFF618B4A),
+      unselectedItemColor: const Color(0xFF3B2C2F),
+      currentIndex: 3,
+      onTap: (index) {
+        switch (index) {
+          case 0:
             Navigator.pushReplacementNamed(context, '/forum_list');
-          }
-
-          if (index == 1){
+            break;
+          case 1:
             Navigator.pushReplacementNamed(context, '/job_board_user_page');
-          }
-
-          if (index == 2){
+            break;
+          case 2:
             Navigator.pushReplacementNamed(context, '/profile_swipe');
-          }
-
-          if (index == 3) {
+            break;
+          case 3:
             Navigator.pushReplacementNamed(context, '/messages');
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Forum'),
-          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Match'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
-        ],
-      );
+            break;
+          case 4:
+            Navigator.pushReplacementNamed(context, '/profile_page');
+            break;
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Forum'),
+        BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
+        BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Match'),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
+      ],
+    );
 }
 }

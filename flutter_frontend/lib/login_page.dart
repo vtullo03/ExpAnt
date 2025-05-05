@@ -56,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
         if (userType == 'official') {
           Navigator.pushReplacementNamed(context, '/company_dashboard');
         } else {
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.pushReplacementNamed(context, '/profile_swipe');
         }
       }
     } else {

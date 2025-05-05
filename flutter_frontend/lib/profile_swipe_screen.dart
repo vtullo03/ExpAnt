@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'message_screen.dart';
 
 class ProfileSwipeScreen extends StatefulWidget {
   const ProfileSwipeScreen({super.key});
@@ -23,49 +22,56 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
   }
 
   Future<void> fetchProfiles() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('authToken');
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('authToken');
 
-    if (token == null) return;
-
-    final response = await http.get(
-      Uri.parse('https://expant-backend.onrender.com/matches_today'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      setState(() {
-        profiles = data.cast<Map<String, dynamic>>();
-        isLoading = false;
-      });
-    } else {
-      print('Failed to fetch matches: ${response.body}');
-      setState(() => isLoading = false);
-    }
+  if (token == null) {
+    if (!mounted) return;
+    setState(() => isLoading = false);
+    return;
   }
 
-  void swipeLeft() {
+  final response = await http.get(
+    Uri.parse('https://expant-backend.onrender.com/matches_today'),
+    headers: {'Authorization': 'Bearer $token'},
+  );
+
+  if (!mounted) return;
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body) as List<dynamic>;
+    setState(() {
+      profiles = data.cast<Map<String, dynamic>>();
+      isLoading = false;
+    });
+  } else {
+    setState(() => isLoading = false);
+  }
+}
+
+void swipeRight() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('authToken');
+  final profile = profiles[currentIndex];
+
+  await http.post(
+    Uri.parse('https://expant-backend.onrender.com/create_connection'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({'username': profile['username']}),
+  );
+
+  if (!mounted) return;
+
   setState(() {
     currentIndex++;
   });
 }
 
 
-  void swipeRight() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('authToken');
-  final profile = profiles[currentIndex];
-
-  await http.post(
-    Uri.parse('https://expant-backend.onrender.com/like_profile'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({'liked_user': profile['username']}),
-  );
-
+  void swipeLeft() {
   setState(() {
     currentIndex++;
   });
@@ -97,6 +103,7 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
         backgroundColor: const Color(0xFFF4F1DE),
         elevation: 0,
         centerTitle: true,
+        automaticallyImplyLeading: false,
         title: const Text(
           "Discover",
           style: TextStyle(color: Color(0xFF618B4A), fontWeight: FontWeight.bold),
@@ -208,36 +215,38 @@ class _ProfileSwipeScreenState extends State<ProfileSwipeScreen> {
   }
 
     Widget _buildBottomNavBar(BuildContext context) {
-      return BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFFF2CC8F),
-        selectedItemColor: const Color(0xFF618B4A),
-        unselectedItemColor: const Color(0xFF3B2C2F),
-        currentIndex: 2,
-        onTap: (index) {
-          if (index == 0){
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      backgroundColor: const Color(0xFFF2CC8F),
+      selectedItemColor: const Color(0xFF618B4A),
+      unselectedItemColor: const Color(0xFF3B2C2F),
+      currentIndex: 2,
+      onTap: (index) {
+        switch (index) {
+          case 0:
             Navigator.pushReplacementNamed(context, '/forum_list');
-          }
-
-          if (index == 1){
+            break;
+          case 1:
             Navigator.pushReplacementNamed(context, '/job_board_user_page');
-          }
-
-          if (index == 2){
+            break;
+          case 2:
             Navigator.pushReplacementNamed(context, '/profile_swipe');
-          }
-
-          if (index == 3) {
+            break;
+          case 3:
             Navigator.pushReplacementNamed(context, '/messages');
-          
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Forum'),
-          BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Match'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
-        ],
-      );
+            break;
+          case 4:
+            Navigator.pushReplacementNamed(context, '/profile_page');
+            break;
+        }
+      },
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.forum), label: 'Forum'),
+        BottomNavigationBarItem(icon: Icon(Icons.work), label: 'Jobs'),
+        BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Match'),
+        BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
+      ],
+    );
     }
   }
