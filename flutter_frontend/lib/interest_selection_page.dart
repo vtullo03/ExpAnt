@@ -14,7 +14,8 @@ class _InterestSelectionPageState extends State<InterestSelectionPage> {
   final List<String> interests = [
     'Coding', 'Gaming', 'Travelling',
     'Cooking', 'Drawing', 'Golfing', 
-    'Music', 'Astrology', 'Food'
+    'Music', 'Astrology', 'Food',
+    'Education', 'Politics'
   ];
   final Set<String> selected = {};
   bool isLoading = false;

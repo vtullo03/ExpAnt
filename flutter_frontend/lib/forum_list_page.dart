@@ -99,6 +99,7 @@ class _ForumListPageState extends State<ForumListPage> {
         backgroundColor: const Color(0xFFF4F1DE),
         elevation: 0,
         centerTitle: true,
+        automaticallyImplyLeading: false,
         title: const Text(
           "Forum",
           style: TextStyle(color: Color(0xFF618B4A), fontWeight: FontWeight.bold),

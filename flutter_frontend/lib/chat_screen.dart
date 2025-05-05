@@ -118,20 +118,33 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAF7E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAF7E7),
-        elevation: 0,
-        title: Row(
-          children: [
-            //const CircleAvatar(radius: 20, backgroundColor: Colors.grey),
-            const SizedBox(width: 10),
-            Text(widget.name, style: const TextStyle(color: Color(0xFF618B4A), fontWeight: FontWeight.bold)),
-          ],
+  backgroundColor: const Color(0xFFFAF7E7),
+  elevation: 0,
+  title: GestureDetector(
+    onTap: () => Navigator.pushNamed(
+      context,
+      '/profile_page',
+      arguments: widget.name,
+    ),
+    child: Row(
+      children: [
+        const SizedBox(width: 10),
+        Text(
+          widget.name,
+          style: const TextStyle(
+            color: Color(0xFF618B4A),
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        bottom: const PreferredSize(
-          preferredSize: Size.fromHeight(2),
-          child: Divider(thickness: 2, color: Color(0xFF618B4A)),
-        ),
-      ),
+      ],
+    ),
+  ),
+  bottom: const PreferredSize(
+    preferredSize: Size.fromHeight(2),
+    child: Divider(thickness: 2, color: Color(0xFF618B4A)),
+  ),
+),
+
       body: Column(
         children: [
           Expanded(
