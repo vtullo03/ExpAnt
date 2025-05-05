@@ -23,7 +23,19 @@ class _AccountSetupPageState extends State<AccountSetupPage> {
   String? selectedCountry;
 
   final List<String> pronouns = ['She/Her', 'He/Him', 'They/Them', 'Other'];
-  final List<String> industries = ['Tech', 'Healthcare', 'Education', 'Finance'];
+ final List<String> industries = [
+  'AI Development',
+  'Design & Lifestyle',
+  'Digital Influence',
+  'Education',
+  'Entertainment',
+  'Finance',
+  'Healthcare',
+  'Law & Policy',
+  'Music',
+  'Sports Media',
+  'Tech',
+];
   final List<String> countries = [
     'United States',
     'Canada',
