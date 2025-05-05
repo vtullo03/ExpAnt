@@ -8,7 +8,6 @@ import 'forum_detail_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
-
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
@@ -28,14 +27,14 @@ class _ProfilePageState extends State<ProfilePage> {
   File? newProfilePic;
   File? newBackground;
 
-  final TextEditingController bioController        = TextEditingController();
-  final TextEditingController firstController      = TextEditingController();
-  final TextEditingController lastController       = TextEditingController();
-  final TextEditingController pronounsController   = TextEditingController();
+  final TextEditingController bioController = TextEditingController();
+  final TextEditingController firstController = TextEditingController();
+  final TextEditingController lastController = TextEditingController();
+  final TextEditingController pronounsController = TextEditingController();
   final TextEditingController universityController = TextEditingController();
-  final TextEditingController companyController    = TextEditingController();
-  final TextEditingController fieldController      = TextEditingController();
-  final TextEditingController locationController   = TextEditingController();
+  final TextEditingController companyController = TextEditingController();
+  final TextEditingController fieldController = TextEditingController();
+  final TextEditingController locationController = TextEditingController();
 
   @override
   void initState() {
@@ -47,14 +46,13 @@ class _ProfilePageState extends State<ProfilePage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('authToken');
     loggedUsername = prefs.getString('username');
-    viewedUsername = (ModalRoute.of(context)?.settings.arguments as String?) ?? loggedUsername;
-
+    viewedUsername =
+        (ModalRoute.of(context)?.settings.arguments as String?) ?? loggedUsername;
     if (token == null || viewedUsername == null) {
       if (!mounted) return;
       setState(() => isLoading = false);
       return;
     }
-
     try {
       final profileRes = await http.get(
         Uri.parse('https://expant-backend.onrender.com/match_profile/$viewedUsername'),
@@ -64,14 +62,11 @@ class _ProfilePageState extends State<ProfilePage> {
         Uri.parse('https://expant-backend.onrender.com/feed'),
         headers: {'Authorization': 'Bearer $token'},
       );
-
       if (!mounted) return;
-
       if (profileRes.statusCode == 200 && forumRes.statusCode == 200) {
         final decodedProfile = jsonDecode(profileRes.body);
         final List<dynamic> allForums = jsonDecode(forumRes.body);
         final List<Map<String, dynamic>> myForums = [];
-
         for (final forumSummary in allForums) {
           if (forumSummary['username'] == viewedUsername) {
             final forumId = forumSummary['id'];
@@ -87,19 +82,18 @@ class _ProfilePageState extends State<ProfilePage> {
             }
           }
         }
-
         if (!mounted) return;
         setState(() {
           profileData = decodedProfile;
           forumPosts = myForums;
-          bioController.text        = profileData?['bio']        ?? '';
-          firstController.text      = profileData?['first_name'] ?? '';
-          lastController.text       = profileData?['last_name']  ?? '';
-          pronounsController.text   = profileData?['pronouns']   ?? '';
+          bioController.text = profileData?['bio'] ?? '';
+          firstController.text = profileData?['first_name'] ?? '';
+          lastController.text = profileData?['last_name'] ?? '';
+          pronounsController.text = profileData?['pronouns'] ?? '';
           universityController.text = profileData?['university'] ?? '';
-          companyController.text    = profileData?['company']    ?? '';
-          fieldController.text      = profileData?['field']      ?? '';
-          locationController.text   = profileData?['location']   ?? '';
+          companyController.text = profileData?['company'] ?? '';
+          fieldController.text = profileData?['field'] ?? '';
+          locationController.text = profileData?['location'] ?? '';
           isLoading = false;
         });
       } else {
@@ -132,27 +126,23 @@ class _ProfilePageState extends State<ProfilePage> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('authToken');
     if (token == null) return;
-
     final Map<String, dynamic> updated = {};
     void add(String key, TextEditingController c) {
       final v = c.text.trim();
       if (v.isNotEmpty) updated[key] = v;
     }
-
-    add('bio',        bioController);
+    add('bio', bioController);
     add('first_name', firstController);
-    add('last_name',  lastController);
-    add('pronouns',   pronounsController);
+    add('last_name', lastController);
+    add('pronouns', pronounsController);
     add('university', universityController);
-    add('company',    companyController);
-    add('field',      fieldController);
-    add('location',   locationController);
-
+    add('company', companyController);
+    add('field', fieldController);
+    add('location', locationController);
     if (updated.isEmpty) {
       setState(() => isEditing = false);
       return;
     }
-
     await http.post(
       Uri.parse('https://expant-backend.onrender.com/update_match_profile'),
       headers: {
@@ -161,10 +151,23 @@ class _ProfilePageState extends State<ProfilePage> {
       },
       body: jsonEncode(updated),
     );
-
     if (!mounted) return;
     setState(() => isEditing = false);
     fetchProfile();
+  }
+
+  Future<void> _connect() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('authToken');
+    if (token == null) return;
+    await http.post(
+      Uri.parse('https://expant-backend.onrender.com/create_connection'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'username': viewedUsername}),
+    );
   }
 
   Widget _buildTF(String label, TextEditingController c, {int maxLines = 1}) =>
@@ -197,7 +200,6 @@ class _ProfilePageState extends State<ProfilePage> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-
     return Scaffold(
       backgroundColor: const Color(0xFFF4F1DE),
       appBar: AppBar(
@@ -223,7 +225,12 @@ class _ProfilePageState extends State<ProfilePage> {
                   onPressed: () => Navigator.pushNamed(context, '/settings'),
                 ),
               ]
-            : [],
+            : [
+                TextButton(
+                  onPressed: _connect,
+                  child: const Text('Connect'),
+                ),
+              ],
         bottom: const PreferredSize(
           preferredSize: Size.fromHeight(2),
           child: Divider(thickness: 2, color: Color(0xFF618B4A)),
