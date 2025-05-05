@@ -607,7 +607,7 @@ async def get_matches(Authorize: AuthJWT = Depends(require_worker)):
 
         # Get current user field, location, and interests
         cur.execute("""
-                    SELECT field, location, interests 
+                    SELECT field, interests 
                     FROM match_profile 
                     WHERE username = %s
                 """, (username,))
@@ -622,13 +622,12 @@ async def get_matches(Authorize: AuthJWT = Depends(require_worker)):
             interests = []
 
         # Have to put username like a million times to check if users are connected
-        # Selects 10 USERS ONLY with same field in same area -- gets prio to users with same interests
+        # Selects 10 USERS ONLY with same field -- gets prio to users with same interests
         cur.execute("""
             SELECT *, 
                 CARDINALITY(ARRAY(SELECT UNNEST(interests) INTERSECT SELECT UNNEST(%s::text[]))) AS shared_interest_count
             FROM match_profile
             WHERE field = %s 
-              AND location = %s 
               AND username != %s
               AND username NOT IN (
                   SELECT CASE
@@ -641,7 +640,6 @@ async def get_matches(Authorize: AuthJWT = Depends(require_worker)):
             ORDER BY shared_interest_count DESC NULLS LAST
             LIMIT 10
         """, (interests, field, location, username, username, username, username))
-        col_names = [desc[0] for desc in cur.description]
 
         matches = cur.fetchall()
         col_names = [desc[0] for desc in cur.description]
