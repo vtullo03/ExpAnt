@@ -151,9 +151,12 @@ class _CompanyDashboardPageState extends State<CompanyDashboardPage> {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/create_job_posting');
-                },
+                onPressed: () async {
+                    final result = await Navigator.pushNamed(context, '/create_job_posting');
+                    if (result == true) {
+                      fetchJobPostings(); // refresh list
+                    }
+                  },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF7BA273),
                   padding: const EdgeInsets.symmetric(vertical: 14),

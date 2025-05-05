@@ -149,13 +149,13 @@ void swipeRight() async {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Container(
+                  /*Container(
                     height: 230,
                     decoration: BoxDecoration(
                       color: Colors.grey[400],
                       borderRadius: BorderRadius.circular(16),
                     ),
-                  ),
+                  ),*/
                   const SizedBox(height: 20),
                   Container(
                     padding: const EdgeInsets.all(16),

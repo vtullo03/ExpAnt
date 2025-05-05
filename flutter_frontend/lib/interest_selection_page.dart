@@ -53,7 +53,7 @@ class _InterestSelectionPageState extends State<InterestSelectionPage> {
     );
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/profile_swipe');
     } else {
       print("Error saving interests: ${response.body}");
     }

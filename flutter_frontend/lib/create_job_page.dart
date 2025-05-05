@@ -43,7 +43,7 @@ class _CreateJobPageState extends State<CreateJobPage> {
     setState(() => isSubmitting = false);
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      Navigator.pop(context); // back to dashboard
+      Navigator.pop(context, true);
     } else {
       print("Failed to create job: ${response.body}");
       ScaffoldMessenger.of(context).showSnackBar(
