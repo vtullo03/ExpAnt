@@ -616,7 +616,8 @@ async def get_matches(Authorize: AuthJWT = Depends(require_worker)):
         if not result:
             raise HTTPException(status_code=404, detail="No matches found")
 
-        field, location, interests = result
+        field, interests = result
+
         # Because this is an optional field and we wanna give prio -- account for when it's empty
         if interests is None:
             interests = []
@@ -639,7 +640,7 @@ async def get_matches(Authorize: AuthJWT = Depends(require_worker)):
               )
             ORDER BY shared_interest_count DESC NULLS LAST
             LIMIT 10
-        """, (interests, field, location, username, username, username, username))
+        """, (interests, field, username, username, username, username))
 
         matches = cur.fetchall()
         col_names = [desc[0] for desc in cur.description]
